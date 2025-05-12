@@ -15,11 +15,9 @@ public class Product {
     private String name;
     private String description;
     private String brand;
-
-    @Enumerated(EnumType.STRING)
     private Category category;
     private String unitOfMeasure;
-    private double costPrice;
-    private double salePrice;
-    private boolean active;
+    private Double costPrice;
+    private Double salePrice;
+    private Double active;
 }

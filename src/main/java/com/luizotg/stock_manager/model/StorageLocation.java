@@ -1,3 +1,38 @@
 package com.luizotg.stock_manager.model;
 
-public class StorageLocation {}
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+@Entity(name="StorageLocation")
+@Table(name="storage_location")
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class StorageLocation {
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        private String name;
+        private String type;
+        private String address;
+        private String phoneNumber;
+        private String email;
+        private String responsibleName;
+        private String notes;
+        private Integer capacity;
+        private Boolean defaultLocation;
+        private Boolean active;
+        private Double latitude;
+        private Double longitude;
+        @CreationTimestamp
+        private LocalDateTime createdAt;
+        @UpdateTimestamp
+        private LocalDateTime updatedAt;
+
+}
