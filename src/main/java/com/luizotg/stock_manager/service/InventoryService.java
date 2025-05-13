@@ -14,15 +14,15 @@ public class InventoryService {
         this.inventoryRepository = inventoryRepository;
     }
 
-    public List<Inventory> findAll() {
+    public List<Inventory> findAllInventories() {
         return inventoryRepository.findAll();
     }
 
-    public Inventory save(Inventory entity) {
+    public Inventory saveInventory(Inventory entity) {
         return inventoryRepository.save(entity);
     }
 
-    public void deleteById(Long id) {
+    public void deleteInventoryById(Long id) {
         inventoryRepository.deleteById(id);
     }
 }

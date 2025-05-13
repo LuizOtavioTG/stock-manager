@@ -14,15 +14,15 @@ public class StockMovementService {
         this.stockmovementRepository = stockmovementRepository;
     }
 
-    public List<StockMovement> findAll() {
+    public List<StockMovement> findAllStockMovements() {
         return stockmovementRepository.findAll();
     }
 
-    public StockMovement save(StockMovement entity) {
+    public StockMovement saveStockMovement(StockMovement entity) {
         return stockmovementRepository.save(entity);
     }
 
-    public void deleteById(Long id) {
+    public void deleteStockMovementById(Long id) {
         stockmovementRepository.deleteById(id);
     }
 }

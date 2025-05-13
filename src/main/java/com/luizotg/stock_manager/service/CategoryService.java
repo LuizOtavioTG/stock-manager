@@ -14,15 +14,15 @@ public class CategoryService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<Category> findAll() {
+    public List<Category> findAllCategories() {
         return categoryRepository.findAll();
     }
 
-    public Category save(Category entity) {
+    public Category saveCategory(Category entity) {
         return categoryRepository.save(entity);
     }
 
-    public void deleteById(Long id) {
+    public void deleteCategoryById(Long id) {
         categoryRepository.deleteById(id);
     }
 }

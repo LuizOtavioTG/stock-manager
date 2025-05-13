@@ -10,15 +10,19 @@ import lombok.*;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Product {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
     private String sku;
     private String name;
     private String description;
     private String brand;
+    @Setter
+    @ManyToOne
+    @JoinColumn(name = "category_id")
     private Category category;
     private String unitOfMeasure;
     private Double costPrice;
     private Double salePrice;
     private Double active;
+
 }

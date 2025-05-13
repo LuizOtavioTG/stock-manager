@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 public class Inventory {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
     private Long productId;
     private Long storageLocationId;

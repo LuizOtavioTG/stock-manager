@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class StockMovement {
-    @Id@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id@GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
     private Long productId;
     private Long storageLocationId;

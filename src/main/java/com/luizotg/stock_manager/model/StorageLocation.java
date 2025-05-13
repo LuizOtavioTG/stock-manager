@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class StorageLocation {
-        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
         private Long id;
         private String name;
         private String type;

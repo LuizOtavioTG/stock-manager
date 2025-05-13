@@ -14,15 +14,15 @@ public class SupplierService {
         this.supplierRepository = supplierRepository;
     }
 
-    public List<Supplier> findAll() {
+    public List<Supplier> findAllSuppliers() {
         return supplierRepository.findAll();
     }
 
-    public Supplier save(Supplier entity) {
+    public Supplier saveSupplier(Supplier entity) {
         return supplierRepository.save(entity);
     }
 
-    public void deleteById(Long id) {
+    public void deleteSupplierById(Long id) {
         supplierRepository.deleteById(id);
     }
 }

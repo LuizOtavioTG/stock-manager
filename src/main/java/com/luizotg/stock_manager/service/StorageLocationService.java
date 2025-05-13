@@ -14,15 +14,15 @@ public class StorageLocationService {
         this.storagelocationRepository = storagelocationRepository;
     }
 
-    public List<StorageLocation> findAll() {
+    public List<StorageLocation> findAllStorageLocations() {
         return storagelocationRepository.findAll();
     }
 
-    public StorageLocation save(StorageLocation entity) {
+    public StorageLocation saveStorageLocation(StorageLocation entity) {
         return storagelocationRepository.save(entity);
     }
 
-    public void deleteById(Long id) {
+    public void deleteStorageLocationById(Long id) {
         storagelocationRepository.deleteById(id);
     }
 }
