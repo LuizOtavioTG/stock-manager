@@ -25,6 +25,7 @@ public class Category {
     @JoinColumn(name = "parent_category_id")
     @JsonBackReference
     private Category parent;
+    @OneToMany(mappedBy = "parent")
     @JsonManagedReference
     private List<Category> children;
 

@@ -1,6 +1,6 @@
 package com.luizotg.stock_manager.controller;
 
-import com.luizotg.stock_manager.repository.StorageLocationRepository;
+
 import com.luizotg.stock_manager.service.StorageLocationService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -15,8 +15,12 @@ public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
-    private Long productId;
-    private Long storageLocationId;
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product productId;
+    @ManyToOne
+    @JoinColumn(name = "storage_location_id")
+    private StorageLocation storageLocationId;
     private Integer quantity;
     @UpdateTimestamp
     private LocalDateTime lastUpdated;
