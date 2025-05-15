@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.dto.category;
 
+import com.luizotg.stock_manager.model.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,4 +17,13 @@ public record CategoryUpdateDTO(
         String description,
 
         Long parentId
-) {}
+) {
+        public CategoryUpdateDTO(Category category) {
+                this(
+                        category.getId(),
+                        category.getName(),
+                        category.getDescription(),
+                        category.getParent() != null ? category.getParent().getId() : null
+                );
+        }
+}
