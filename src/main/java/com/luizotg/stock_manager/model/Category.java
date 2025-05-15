@@ -4,11 +4,9 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.luizotg.stock_manager.dto.category.CategoryCreateDTO;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 @Entity(name="Category")
 @Table(name="category")
@@ -17,6 +15,7 @@ import java.util.List;
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Category {
+    @Setter(AccessLevel.PRIVATE)
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
     private String name;
@@ -38,14 +37,20 @@ public class Category {
         this.children = children;
     }
     public Category(CategoryCreateDTO categoryDTO) {
-        this.name = categoryDTO.name();  // Nome não pode ser nulo ou vazio devido às validações no DTO
-        this.description = categoryDTO.description() != null ? categoryDTO.description() : "Descrição não fornecida"; // Valor padrão para descrição
-        this.active = true; // Definindo 'active' como true por padrão
+        this.name = categoryDTO.name();
+        this.description = categoryDTO.description() != null ? categoryDTO.description() : null;
+        this.active = true;
 
-        // Se o parentId for fornecido, você pode buscar a categoria pai, caso contrário, deixa null
-        this.parent = categoryDTO.parentId() != null ? new Category(categoryDTO.parentId()) : null;
 
-        // Se não houver children, você pode deixá-los como uma lista vazia ou nula, dependendo do seu modelo de dados
+        if (categoryDTO.parentId() != null) {
+            Category parentCategory = new Category();
+            parentCategory.setId(categoryDTO.parentId());  // Atribuindo apenas o ID
+            this.parent = parentCategory;
+        } else {
+            this.parent = null;
+        }
+
+
         this.children = categoryDTO.parentId() != null ? new ArrayList<>() : null;
     }
 }
