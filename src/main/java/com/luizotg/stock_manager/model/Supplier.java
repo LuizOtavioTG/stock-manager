@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity(name="Supplier")
 @Table(name="supplier")
@@ -26,4 +27,6 @@ public class Supplier {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+    @ManyToMany(mappedBy = "suppliers")
+    private List<Product> products;
 }

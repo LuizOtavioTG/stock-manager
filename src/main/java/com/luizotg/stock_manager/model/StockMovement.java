@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 @Entity(name="StockMovement")
@@ -16,15 +18,23 @@ import java.time.LocalDateTime;
 public class StockMovement {
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
-    private Long productId;
-    private Long storageLocationId;
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+    @ManyToOne
+    @JoinColumn(name = "storage_location_id", nullable = false)
+    private StorageLocation storageLocation;
     private Integer quantity;
-    private String movementType;
+    private MovementType movementType;
     private String reason;
     private LocalDateTime movementDate;
     private String reference;
     private String responsible;
     private String notes;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {

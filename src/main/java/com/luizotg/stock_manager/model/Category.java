@@ -6,7 +6,10 @@ import com.luizotg.stock_manager.dto.category.CategoryCreateDTO;
 import com.luizotg.stock_manager.dto.category.CategoryUpdateDTO;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -23,7 +26,7 @@ public class Category {
     private Long id;
     private String name;
     private String description;
-    private Boolean active;
+    private Boolean active = true;
     @ManyToOne
     @JoinColumn(name = "parent_category_id")
     @JsonBackReference
@@ -31,19 +34,20 @@ public class Category {
     @OneToMany(mappedBy = "parent")
     @JsonManagedReference
     private List<Category> children;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     public Category( String name, String description, Boolean active, Category parent, List<Category> children) {
         this.name = name;
         this.description = description;
-        this.active = true;
         this.parent = parent;
         this.children = children;
     }
     public Category(CategoryCreateDTO categoryDTO) {
         this.name = categoryDTO.name();
         this.description = categoryDTO.description() != null ? categoryDTO.description() : null;
-        this.active = true;
-
 
         if (categoryDTO.parentId() != null) {
             Category parentCategory = new Category();
@@ -52,7 +56,6 @@ public class Category {
         } else {
             this.parent = null;
         }
-
 
         this.children = categoryDTO.parentId() != null ? new ArrayList<>() : null;
     }

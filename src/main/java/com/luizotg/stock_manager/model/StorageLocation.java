@@ -9,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 @Entity(name="StorageLocation")
 @Table(name="storage_location")
 @NoArgsConstructor
@@ -16,7 +18,9 @@ import java.time.LocalDateTime;
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class StorageLocation {
-        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @EqualsAndHashCode.Include
         private Long id;
         private String name;
         private String type;
@@ -26,13 +30,15 @@ public class StorageLocation {
         private String responsibleName;
         private String notes;
         private Integer capacity;
-        private Boolean defaultLocation;
-        private Boolean active;
+        private Boolean defaultLocation = false;
+        private Boolean active = true;
         private Double latitude;
         private Double longitude;
         @CreationTimestamp
         private LocalDateTime createdAt;
         @UpdateTimestamp
         private LocalDateTime updatedAt;
+        @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
+        private List<Inventory> inventories;
 
 }

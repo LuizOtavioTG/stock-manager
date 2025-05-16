@@ -5,7 +5,7 @@ CREATE TABLE supplier (
                           phone_number VARCHAR(20),
                           email VARCHAR(255),
                           address TEXT,
-                          active BOOLEAN,
-                          created_at TIMESTAMP,
-                          updated_at TIMESTAMP
+                          active BOOLEAN DEFAULT TRUE,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
