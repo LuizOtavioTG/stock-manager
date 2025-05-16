@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.controller;
 
 import com.luizotg.stock_manager.dto.category.CategoryCreateDTO;
 import com.luizotg.stock_manager.dto.category.CategoryDetailDTO;
+import com.luizotg.stock_manager.dto.category.CategoryUpdateDTO;
 import com.luizotg.stock_manager.model.Category;
 import com.luizotg.stock_manager.service.CategoryService;
 import jakarta.transaction.Transactional;
@@ -26,7 +27,9 @@ public class CategoryController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<CategoryDetailDTO> createCategory(@RequestBody @Valid CategoryCreateDTO categoryDTO) {
+    public ResponseEntity<CategoryDetailDTO> createCategory(
+            @RequestBody @Valid CategoryCreateDTO categoryDTO
+    ) {
         Category category = categoryService.saveCategory(categoryDTO);
         var uri = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -36,20 +39,35 @@ public class CategoryController {
                 .body(new CategoryDetailDTO(category));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<CategoryDetailDTO> detailCategory(@PathVariable Long id) {
+    public ResponseEntity<CategoryDetailDTO> detailCategory(
+            @PathVariable Long id
+    ) {
         Category category = categoryService.findCategoryById(id);
         return ResponseEntity.ok(new CategoryDetailDTO(category));
     }
     @GetMapping
-    public ResponseEntity<Page<CategoryDetailDTO>> listAllCategories(@PageableDefault(size = 10, sort ={"name"}) Pageable pageable) {
+    public ResponseEntity<Page<CategoryDetailDTO>> listAllCategories(
+            @PageableDefault(size = 10, sort ={"name"}) Pageable pageable
+    ) {
         Page<Category> categories = categoryService.findAllCategories(pageable);
         Page<CategoryDetailDTO> dtoPage = categories.map(CategoryDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory (@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCategory (
+            @PathVariable Long id
+    ) {
         categoryService.findCategoryById(id);
         categoryService.deleteCategoryById(id);
         return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<CategoryDetailDTO> updateCategory(
+            @PathVariable Long id,
+            @RequestBody @Valid CategoryUpdateDTO categoryUpdateDTO
+    ) {
+        Category category = categoryService.updateCategory(id, categoryUpdateDTO);
+        return ResponseEntity.ok(new CategoryDetailDTO(category));
     }
 }

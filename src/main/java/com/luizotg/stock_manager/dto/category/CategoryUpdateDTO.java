@@ -6,8 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CategoryUpdateDTO(
-        @NotNull(message = "{category.id.notnull}")
-        Long id,
 
         @Size(max = 100, message = "{category.name.size}")
         @NotBlank(message = "{category.name.notblank}")
@@ -20,7 +18,6 @@ public record CategoryUpdateDTO(
 ) {
         public CategoryUpdateDTO(Category category) {
                 this(
-                        category.getId(),
                         category.getName(),
                         category.getDescription(),
                         category.getParent() != null ? category.getParent().getId() : null

@@ -1,12 +1,17 @@
 package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.category.CategoryCreateDTO;
+import com.luizotg.stock_manager.dto.category.CategoryUpdateDTO;
 import com.luizotg.stock_manager.model.Category;
 import com.luizotg.stock_manager.repository.CategoryRepository;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,5 +50,18 @@ public class CategoryService {
         // TODO: Do it on @RestControllerAdvice
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Categoria não encontrada com o id: " + id));
+    }
+
+
+    public Category updateCategory( Long id, CategoryUpdateDTO categoryUpdateDTO) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Categoria não encontrada com o id: " + id));
+
+        category.updateFromDTO(categoryUpdateDTO, parentId -> categoryRepository.findById(parentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Categoria pai não encontrada com o id: " + parentId)));
+
+        return categoryRepository.save(category);
     }
 }

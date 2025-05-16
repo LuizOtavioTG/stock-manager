@@ -3,11 +3,14 @@ package com.luizotg.stock_manager.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.luizotg.stock_manager.dto.category.CategoryCreateDTO;
+import com.luizotg.stock_manager.dto.category.CategoryUpdateDTO;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+
 @Entity(name="Category")
 @Table(name="category")
 @NoArgsConstructor
@@ -52,5 +55,15 @@ public class Category {
 
 
         this.children = categoryDTO.parentId() != null ? new ArrayList<>() : null;
+    }
+    public void updateFromDTO(CategoryUpdateDTO dto, Function<Long, Category> parentResolver) {
+        this.name = dto.name();
+        this.description = dto.description();
+
+        if (dto.parentId() != null) {
+            this.parent = parentResolver.apply(dto.parentId());
+        } else {
+            this.parent = null;
+        }
     }
 }
