@@ -1,10 +1,12 @@
 package com.luizotg.stock_manager.service;
 
+import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.model.Inventory;
 import com.luizotg.stock_manager.repository.InventoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InventoryService {
@@ -18,8 +20,15 @@ public class InventoryService {
         return inventoryRepository.findAll();
     }
 
-    public Inventory saveInventory(Inventory entity) {
-        return inventoryRepository.save(entity);
+    public Inventory saveInventory(InventoryCreateDTO inventoryDTO) {
+        if (inventoryDTO.productId() != null) {
+            Optional<Inventory> inventory = inventoryRepository.findById(inventoryDTO.productId());
+            if (inventory.isPresent()) {
+                throw new IllegalArgumentException("ProdutoId não encontrado.");
+            }
+        }
+        Inventory inventory = new Inventory(inventoryDTO);
+        return inventoryRepository.save(inventory);
     }
 
     public void deleteInventoryById(Long id) {

@@ -39,7 +39,7 @@ public class Category {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    public Category( String name, String description, Boolean active, Category parent, List<Category> children) {
+    public Category( String name, String description, Category parent, List<Category> children) {
         this.name = name;
         this.description = description;
         this.parent = parent;
@@ -51,7 +51,7 @@ public class Category {
 
         if (categoryDTO.parentId() != null) {
             Category parentCategory = new Category();
-            parentCategory.setId(categoryDTO.parentId());  // Atribuindo apenas o ID
+            parentCategory.setId(categoryDTO.parentId());
             this.parent = parentCategory;
         } else {
             this.parent = null;

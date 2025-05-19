@@ -1,5 +1,7 @@
 package com.luizotg.stock_manager.model;
 
+import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
+import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -27,4 +29,27 @@ public class Inventory {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public Inventory(InventoryCreateDTO inventoryDTO) {
+        if (inventoryDTO.productId() != null) {
+            Product product = new Product();
+            this.product = product;
+        }
+        if (inventoryDTO.storageLocationId() != null) {
+            StorageLocation storageLocation = new StorageLocation();
+            this.storageLocation = storageLocation;
+        }
+        this.quantity = inventoryDTO.quantity();
+    }
+    public Inventory(InventoryUpdateDTO inventoryDTO) {
+        if (inventoryDTO.productId() != null) {
+            Product product = new Product();
+            this.product = product;
+        }
+        if (inventoryDTO.storageLocationId() != null) {
+            StorageLocation storageLocation = new StorageLocation();
+            this.storageLocation = storageLocation;
+        }
+        this.quantity = inventoryDTO.quantity();
+    }
 }

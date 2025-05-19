@@ -29,7 +29,7 @@ public class CategoryService {
         return categoryRepository.findAll(pageable);
     }
 
-    public Category saveCategory(@Valid CategoryCreateDTO categoryDTO) {
+    public Category saveCategory(CategoryCreateDTO categoryDTO) {
         if (categoryDTO.parentId() != null) {
             Optional<Category> parentCategory = categoryRepository.findById(categoryDTO.parentId());
             // TODO: Do it on @RestControllerAdvice
