@@ -1,8 +1,10 @@
 package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
+import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
 import com.luizotg.stock_manager.model.Inventory;
 import com.luizotg.stock_manager.repository.InventoryRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,8 +32,12 @@ public class InventoryService {
         Inventory inventory = new Inventory(inventoryDTO);
         return inventoryRepository.save(inventory);
     }
-
+    public Inventory findById(Long id) {
+        return inventoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Estoque com ID " + id + " não encontrado."));
+    }
     public void deleteInventoryById(Long id) {
+
         inventoryRepository.deleteById(id);
     }
 }
