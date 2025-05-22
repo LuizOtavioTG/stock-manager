@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.controller;
 
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryDetailDTO;
+import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
 import com.luizotg.stock_manager.model.Inventory;
 import com.luizotg.stock_manager.service.InventoryService;
 import jakarta.transaction.Transactional;
@@ -37,7 +38,15 @@ public class InventoryController {
     public ResponseEntity<InventoryDetailDTO> detailInventory(
             @PathVariable Long id
     ){
-        Inventory inventory = inventoryService.findById(id);
+        Inventory inventory = inventoryService.findInventoryById(id);
+        return ResponseEntity.ok(new InventoryDetailDTO(inventory));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<InventoryDetailDTO> updateInventory(
+            @PathVariable Long id,
+            @RequestBody @Valid InventoryUpdateDTO inventoryUpdateDTO
+    ){
+        Inventory inventory = inventoryService.updateInventory(id, inventoryUpdateDTO);
         return ResponseEntity.ok(new InventoryDetailDTO(inventory));
     }
     @GetMapping
@@ -48,4 +57,12 @@ public class InventoryController {
         Page<InventoryDetailDTO> dtoPage = inventories.map(InventoryDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
     }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInventory(
+            @PathVariable Long id
+    ){
+        inventoryService.deleteInventoryById(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

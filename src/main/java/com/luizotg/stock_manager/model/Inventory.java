@@ -52,4 +52,6 @@ public class Inventory {
         }
         this.quantity = inventoryDTO.quantity();
     }
+
+
 }
