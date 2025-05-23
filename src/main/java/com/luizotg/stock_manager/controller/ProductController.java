@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.controller;
 
 import com.luizotg.stock_manager.service.ProductService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,4 +12,5 @@ public class ProductController {
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
+
 }

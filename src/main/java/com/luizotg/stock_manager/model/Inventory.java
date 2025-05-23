@@ -18,12 +18,15 @@ public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
+    @Setter(AccessLevel.PUBLIC)
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+    @Setter(AccessLevel.PUBLIC)
     @ManyToOne
     @JoinColumn(name = "storage_location_id")
     private StorageLocation storageLocation;
+    @Setter(AccessLevel.PUBLIC)
     private Integer quantity;
     @CreationTimestamp
     private LocalDateTime createdAt;
