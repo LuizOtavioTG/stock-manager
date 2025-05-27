@@ -38,7 +38,7 @@ public class StorageLocation {
         private LocalDateTime createdAt;
         @UpdateTimestamp
         private LocalDateTime updatedAt;
-        @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
+        @OneToMany(mappedBy = "storageLocation", cascade = CascadeType.ALL, orphanRemoval = true)
         private List<Inventory> inventories;
 
 }

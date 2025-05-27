@@ -4,16 +4,12 @@ import com.luizotg.stock_manager.dto.category.CategoryCreateDTO;
 import com.luizotg.stock_manager.dto.category.CategoryUpdateDTO;
 import com.luizotg.stock_manager.model.Category;
 import com.luizotg.stock_manager.repository.CategoryRepository;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.Optional;
 
 

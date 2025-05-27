@@ -1,9 +1,9 @@
 package com.luizotg.stock_manager.dto.category;
 
 import com.luizotg.stock_manager.model.Category;
-import jakarta.validation.Valid;
+
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+
 import jakarta.validation.constraints.Size;
 
 public record CategoryCreateDTO(

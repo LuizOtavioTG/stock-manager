@@ -3,6 +3,7 @@ package com.luizotg.stock_manager.dto.product;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public record ProductCreateDTO(
 
@@ -37,6 +38,6 @@ public record ProductCreateDTO(
 
         @NotNull(message = "{product.supplierIds.notnull}")
         @Size(min = 1, message = "{product.supplierIds.size}")
-        List<@NotNull(message = "{product.supplierIds.item.notnull}") Long> supplierIds
+        Set<@NotNull(message = "{product.supplierIds.item.notnull}") Long> supplierIds
 
 ) {}

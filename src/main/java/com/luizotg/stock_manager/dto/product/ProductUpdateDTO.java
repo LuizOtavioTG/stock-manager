@@ -3,6 +3,7 @@ package com.luizotg.stock_manager.dto.product;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public record ProductUpdateDTO(
 
@@ -31,6 +32,6 @@ public record ProductUpdateDTO(
         @FutureOrPresent(message = "{product.expirationDate.futureOrPresent}")
         LocalDate expirationDate,
 
-        List<@NotNull(message = "{product.supplierIds.item.notnull}") Long> supplierIds
+        Set<@NotNull(message = "{product.supplierIds.item.notnull}") Long> supplierIds
 
 ) {}

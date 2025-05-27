@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-@Builder
+
 @Entity(name="Category")
 @Table(name="category")
 @NoArgsConstructor
@@ -34,7 +34,6 @@ public class Category {
     private Category parent;
     @OneToMany(mappedBy = "parent")
     @JsonManagedReference
-    @Builder.Default
     private List<Category> children;
     @CreationTimestamp
     private LocalDateTime createdAt;
