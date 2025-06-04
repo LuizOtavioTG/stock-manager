@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 
 public record StockMovementUpdateDTO(
 
+        Long productId,
+        Long storageLocationId,
         @Min(value = 1, message = "{stockMovement.quantity.min}")
         Integer quantity,
 

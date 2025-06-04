@@ -1,10 +1,9 @@
 package com.luizotg.stock_manager.model;
 
+import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Setter(AccessLevel.PRIVATE)
 public class StockMovement {
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
@@ -41,5 +41,46 @@ public class StockMovement {
         if (movementDate == null) {
             movementDate = LocalDateTime.now();
         }
+    }
+
+    public StockMovement(StockMovementCreateDTO stockMovementCreateDTO) {
+
+        if(stockMovementCreateDTO.productId() != null) {
+            Product product = new Product();
+            product.setId(stockMovementCreateDTO.productId());
+            this.product = product;
+        }
+        if(stockMovementCreateDTO.storageLocationId() != null) {
+            StorageLocation storageLocation = new StorageLocation();
+            storageLocation.setId(stockMovementCreateDTO.storageLocationId());
+            this.storageLocation = storageLocation;
+        }
+        this.quantity = stockMovementCreateDTO.quantity();
+        this.movementType = stockMovementCreateDTO.movementType();
+        this.reason = stockMovementCreateDTO.reason();
+        this.movementDate = this.getMovementDate();
+        this.reference = stockMovementCreateDTO.reference();
+        this.responsible = stockMovementCreateDTO.responsible();
+        this.notes = stockMovementCreateDTO.notes();
+
+    }
+    public StockMovement(StockMovementUpdateDTO stockMovementUpdateDTO) {
+        if(stockMovementUpdateDTO.productId() != null) {
+            Product product = new Product();
+            product.setId(stockMovementUpdateDTO.productId());
+            this.product = product;
+        }
+            if(stockMovementUpdateDTO.storageLocationId() != null) {
+            StorageLocation storageLocation = new StorageLocation();
+            storageLocation.setId(stockMovementUpdateDTO.storageLocationId());
+            this.storageLocation = storageLocation;
+        }
+        this.quantity = stockMovementUpdateDTO.quantity();
+        this.movementType = stockMovementUpdateDTO.movementType();
+        this.reason = stockMovementUpdateDTO.reason();
+        this.movementDate = this.getMovementDate();
+        this.reference = stockMovementUpdateDTO.reference();
+        this.responsible = stockMovementUpdateDTO.responsible();
+        this.notes = stockMovementUpdateDTO.notes();
     }
 }

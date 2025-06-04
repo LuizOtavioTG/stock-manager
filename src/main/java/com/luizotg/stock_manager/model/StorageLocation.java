@@ -1,10 +1,7 @@
 package com.luizotg.stock_manager.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -16,8 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter(AccessLevel.NONE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class StorageLocation {
+        @Setter
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @EqualsAndHashCode.Include

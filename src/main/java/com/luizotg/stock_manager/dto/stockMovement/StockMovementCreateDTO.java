@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.dto.stockMovement;
 
 import com.luizotg.stock_manager.model.MovementType;
+import com.luizotg.stock_manager.model.StockMovement;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
@@ -34,4 +35,22 @@ public record StockMovementCreateDTO(
         @Size(max = 500, message = "{stockMovement.notes.size}")
         String notes
 
-) {}
+) {
+        public StockMovementCreateDTO(StockMovement stockMovement){
+                this(
+                        stockMovement.getProduct() != null ? stockMovement.getProduct().getId() : null,
+                        stockMovement.getStorageLocation() != null ? stockMovement.getStorageLocation().getId() : null,
+                        stockMovement.getQuantity(),
+                        stockMovement.getMovementType(),
+                        stockMovement.getReason(),
+                        stockMovement.getMovementDate(),
+                        stockMovement.getReference(),
+                        stockMovement.getResponsible(),
+                        stockMovement.getNotes()
+
+
+                );
+
+        }
+
+}

@@ -18,6 +18,7 @@ import java.util.Set;
 @Setter(AccessLevel.NONE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Product {
+    @Setter
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
     @Setter
