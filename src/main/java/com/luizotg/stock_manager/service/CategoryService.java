@@ -50,13 +50,8 @@ public class CategoryService {
 
 
     public Category updateCategory( Long id, CategoryUpdateDTO categoryUpdateDTO) {
-        Category category = findCategoryById(id);
-
-
-        category.updateFromDTO(categoryUpdateDTO, parentId -> categoryRepository.findById(parentId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Categoria pai não encontrada com o id: " + parentId)));
-
+        findCategoryById(id);
+        Category category = new Category(id, categoryUpdateDTO);
         return categoryRepository.save(category);
     }
 }

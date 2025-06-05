@@ -64,7 +64,8 @@ public class StockMovement {
         this.notes = stockMovementCreateDTO.notes();
 
     }
-    public StockMovement(StockMovementUpdateDTO stockMovementUpdateDTO) {
+    public StockMovement(Long id, StockMovementUpdateDTO stockMovementUpdateDTO) {
+        this.id = id;
         if(stockMovementUpdateDTO.productId() != null) {
             Product product = new Product();
             product.setId(stockMovementUpdateDTO.productId());

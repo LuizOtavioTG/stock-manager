@@ -21,8 +21,8 @@ import java.util.function.Function;
 @AllArgsConstructor
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Setter(AccessLevel.PRIVATE)
 public class Category {
-    @Setter(AccessLevel.PRIVATE)
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
     private String name;
@@ -60,12 +60,15 @@ public class Category {
 
         this.children = categoryDTO.parentId() != null ? new ArrayList<>() : null;
     }
-    public void updateFromDTO(CategoryUpdateDTO dto, Function<Long, Category> parentResolver) {
+    public Category(Long id, CategoryUpdateDTO dto) {
+        this.id = id;
         this.name = dto.name();
         this.description = dto.description();
 
         if (dto.parentId() != null) {
-            this.parent = parentResolver.apply(dto.parentId());
+            Category parentCategory = new Category();
+            parentCategory.setId(dto.parentId());
+            this.parent = parentCategory;
         } else {
             this.parent = null;
         }
