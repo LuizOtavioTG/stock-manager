@@ -1,5 +1,9 @@
 package com.luizotg.stock_manager.model;
 
+import com.luizotg.stock_manager.dto.product.ProductCreateDTO;
+import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
+import com.luizotg.stock_manager.repository.CategoryRepository;
+import com.luizotg.stock_manager.repository.SupplierRepository;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -7,6 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -15,35 +20,24 @@ import java.util.Set;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter(AccessLevel.NONE)
+@Setter(AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Product {
-    @Setter
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
-    @Setter
     private String sku;
-    @Setter
     private String name;
-    @Setter
     private String description;
-    @Setter
     private String brand;
-    @Setter
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
-    @Setter
     private String unitOfMeasure;
-    @Setter
     private Double costPrice;
-    @Setter
     private Double salePrice;
-    @Setter
     private Boolean active = true;
-    @Setter
     private LocalDate expirationDate;
-    @Setter
     @ManyToMany
     @JoinTable(
             name = "product_supplier",
@@ -59,4 +53,58 @@ public class Product {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public Product (Long id){
+        this.id = id;
+    }
+
+    public Product(ProductCreateDTO dto, CategoryRepository categoryRepository, SupplierRepository supplierRepository) {
+        this.name = dto.name();
+        this.description = dto.description();
+        this.brand = dto.brand();
+        this.unitOfMeasure = dto.unitOfMeasure();
+        this.costPrice = dto.costPrice();
+        this.salePrice = dto.salePrice();
+        this.expirationDate = dto.expirationDate();
+        this.active = true;
+
+        if (dto.categoryId() != null) {
+            this.category = categoryRepository.findById(dto.categoryId())
+                    .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
+        }
+
+        if (dto.supplierIds() != null) {
+            Set<Supplier> suppliers = new HashSet<>(supplierRepository.findAllById(dto.supplierIds()));
+            if (suppliers.size() != dto.supplierIds().size()) {
+                throw new EntityNotFoundException("Um ou mais fornecedores não foram encontrados.");
+            }
+            this.suppliers = suppliers;
+        }
+    }
+
+
+    public void updateFromDTO(ProductUpdateDTO dto, CategoryRepository categoryRepository, SupplierRepository supplierRepository) {
+        if (dto.name() != null) setName(dto.name());
+        if (dto.description() != null) setDescription(dto.description());
+        if (dto.brand() != null) setBrand(dto.brand());
+        if (dto.unitOfMeasure() != null) setUnitOfMeasure(dto.unitOfMeasure());
+        if (dto.costPrice() != null) setCostPrice(dto.costPrice());
+        if (dto.salePrice() != null) setSalePrice(dto.salePrice());
+        if (dto.expirationDate() != null) setExpirationDate(dto.expirationDate());
+        if (dto.active() != null) setActive(dto.active());
+
+        if (dto.categoryId() != null) {
+            Category category = categoryRepository.findById(dto.categoryId())
+                    .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
+            setCategory(category);
+        }
+
+        if (dto.supplierIds() != null) {
+            Set<Supplier> suppliers = new HashSet<>(supplierRepository.findAllById(dto.supplierIds()));
+            if (suppliers.size() != dto.supplierIds().size()) {
+                throw new EntityNotFoundException("Um ou mais fornecedores não foram encontrados.");
+            }
+            setSuppliers(suppliers);
+        }
+    }
 }

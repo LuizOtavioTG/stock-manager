@@ -60,8 +60,7 @@ public class Category {
 
         this.children = categoryDTO.parentId() != null ? new ArrayList<>() : null;
     }
-    public Category(Long id, CategoryUpdateDTO dto) {
-        this.id = id;
+    public void updateFromDTO(CategoryUpdateDTO dto) {
         this.name = dto.name();
         this.description = dto.description();
 

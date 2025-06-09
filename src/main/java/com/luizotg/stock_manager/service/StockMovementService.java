@@ -40,8 +40,8 @@ public class StockMovementService {
     }
 
     public StockMovement updateStockMovement(Long id, StockMovementUpdateDTO dto) {
-        findStockMovementById(id);
-        StockMovement stockMovementUpdate = new StockMovement(id, dto);
-        return stockmovementRepository.save(stockMovementUpdate);
+        StockMovement existing = findStockMovementById(id);
+        existing.updateFromDTO(dto);
+        return stockmovementRepository.save(existing);
     }
 }

@@ -49,9 +49,9 @@ public class CategoryService {
     }
 
 
-    public Category updateCategory( Long id, CategoryUpdateDTO categoryUpdateDTO) {
-        findCategoryById(id);
-        Category category = new Category(id, categoryUpdateDTO);
+    public Category updateCategory(Long id, CategoryUpdateDTO categoryUpdateDTO) {
+        Category category = findCategoryById(id);
+        category.updateFromDTO(categoryUpdateDTO);
         return categoryRepository.save(category);
     }
 }

@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.model;
 
+import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,10 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-@Setter(AccessLevel.NONE)
+@Setter(AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class StorageLocation {
-        @Setter
+
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @EqualsAndHashCode.Include
@@ -39,5 +40,9 @@ public class StorageLocation {
         private LocalDateTime updatedAt;
         @OneToMany(mappedBy = "storageLocation", cascade = CascadeType.ALL, orphanRemoval = true)
         private List<Inventory> inventories;
+
+        public StorageLocation (Long id){
+                this.id = id;
+        }
 
 }

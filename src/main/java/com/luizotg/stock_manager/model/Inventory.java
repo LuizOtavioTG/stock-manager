@@ -14,15 +14,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Getter
+@Setter(AccessLevel.PRIVATE)
 public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
-    @Setter(AccessLevel.PUBLIC)
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
-    @Setter(AccessLevel.PUBLIC)
     @ManyToOne
     @JoinColumn(name = "storage_location_id")
     private StorageLocation storageLocation;
@@ -44,16 +43,20 @@ public class Inventory {
         }
         this.quantity = inventoryDTO.quantity();
     }
-    public Inventory(InventoryUpdateDTO inventoryDTO) {
-        if (inventoryDTO.productId() != null) {
+    public void updateFromDTO(InventoryUpdateDTO dto) {
+        if (dto.productId() != null) {
             Product product = new Product();
+            product.setId(dto.productId());
             this.product = product;
         }
-        if (inventoryDTO.storageLocationId() != null) {
+
+        if (dto.storageLocationId() != null) {
             StorageLocation storageLocation = new StorageLocation();
+            storageLocation.setId(dto.storageLocationId());
             this.storageLocation = storageLocation;
         }
-        this.quantity = inventoryDTO.quantity();
+
+        this.quantity = dto.quantity();
     }
 
 

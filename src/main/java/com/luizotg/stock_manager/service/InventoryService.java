@@ -22,18 +22,20 @@ import java.util.Optional;
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
-    private final ProductRepository productRepository;
+    private final ProductService productService;
     private final StorageLocationRepository storageLocationRepository;
+    private final StorageLocationService storageLocationService;
+
     public InventoryService(
             InventoryRepository inventoryRepository,
-            ProductRepository productRepository,
-            StorageLocationRepository storageLocationRepository
-    ) {
+            ProductService productService,
+            StorageLocationRepository storageLocationRepository,
+            StorageLocationService storageLocationService) {
         this.inventoryRepository = inventoryRepository;
-        this.productRepository = productRepository;
-        this.storageLocationRepository= storageLocationRepository;
+        this.productService = productService;
+        this.storageLocationRepository = storageLocationRepository;
+        this.storageLocationService = storageLocationService;
     }
-
 
     public Page<Inventory> findAllInventories(Pageable pageable) {
         return inventoryRepository.findAll(pageable);
@@ -49,34 +51,21 @@ public class InventoryService {
         Inventory inventory = new Inventory(inventoryDTO);
         return inventoryRepository.save(inventory);
     }
+
     public Inventory findInventoryById(Long id) {
         return inventoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Estoque com ID " + id + " não encontrado."));
     }
+
     public void deleteInventoryById(Long id) {
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventário não encontrado"));
         inventoryRepository.delete(inventory);
     }
+
     public Inventory updateInventory(Long id, InventoryUpdateDTO dto) {
         Inventory inventory = findInventoryById(id);
-
-        if (dto.productId() != null) {
-            Product product = productRepository.findById(dto.productId())
-                    .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + dto.productId() + " não encontrado."));
-            inventory.setProduct(product);
-        }
-
-        if (dto.storageLocationId() != null) {
-            StorageLocation location = storageLocationRepository.findById(dto.storageLocationId())
-                    .orElseThrow(() -> new EntityNotFoundException("Local de armazenamento com ID " + dto.storageLocationId() + " não encontrado."));
-            inventory.setStorageLocation(location);
-        }
-
-        if (dto.quantity() != null) {
-            inventory.setQuantity(dto.quantity());
-        }
-
+        inventory.updateFromDTO(dto);
         return inventoryRepository.save(inventory);
     }
 

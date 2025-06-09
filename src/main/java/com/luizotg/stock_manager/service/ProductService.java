@@ -34,26 +34,7 @@ public class ProductService {
     }
 
     public Product saveProduct(ProductCreateDTO dto) {
-        Category category = categoryRepository.findById(dto.categoryId())
-                .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
-
-        Set<Supplier> suppliers = new HashSet<>(supplierRepository.findAllById(dto.supplierIds()));
-        if (suppliers.size() != dto.supplierIds().size()) {
-            throw new EntityNotFoundException("Um ou mais fornecedores não foram encontrados.");
-        }
-
-        Product product = new Product();
-        product.setName(dto.name());
-        product.setDescription(dto.description());
-        product.setBrand(dto.brand());
-        product.setCategory(category);
-        product.setUnitOfMeasure(dto.unitOfMeasure());
-        product.setCostPrice(dto.costPrice());
-        product.setSalePrice(dto.salePrice());
-        product.setExpirationDate(dto.expirationDate());
-        product.setSuppliers(suppliers);
-        product.setActive(true);
-
+        Product product = new Product(dto, categoryRepository, supplierRepository);
         return productRepository.save(product);
     }
 
@@ -73,30 +54,7 @@ public class ProductService {
 
     public Product updateProduct(Long id, ProductUpdateDTO dto) {
         Product product = findProductById(id);
-
-        if (dto.name() != null) product.setName(dto.name());
-        if (dto.description() != null) product.setDescription(dto.description());
-        if (dto.brand() != null) product.setBrand(dto.brand());
-        if (dto.unitOfMeasure() != null) product.setUnitOfMeasure(dto.unitOfMeasure());
-        if (dto.costPrice() != null) product.setCostPrice(dto.costPrice());
-        if (dto.salePrice() != null) product.setSalePrice(dto.salePrice());
-        if (dto.expirationDate() != null) product.setExpirationDate(dto.expirationDate());
-        if (dto.active() != null) product.setActive(dto.active());
-
-        if (dto.categoryId() != null) {
-            Category category = categoryRepository.findById(dto.categoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
-            product.setCategory(category);
-        }
-
-        if (dto.supplierIds() != null) {
-            Set<Supplier> suppliers = new HashSet<>(supplierRepository.findAllById(dto.supplierIds()));
-            if (suppliers.size() != dto.supplierIds().size()) {
-                throw new EntityNotFoundException("Um ou mais fornecedores não foram encontrados.");
-            }
-            product.setSuppliers(suppliers);
-        }
-
+        product.updateFromDTO(dto, categoryRepository, supplierRepository);
         return productRepository.save(product);
     }
 }

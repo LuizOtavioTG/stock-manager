@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Setter(AccessLevel.PRIVATE)
 public class StockMovement {
+    @Setter(AccessLevel.PRIVATE)
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
     @ManyToOne
@@ -43,45 +44,35 @@ public class StockMovement {
         }
     }
 
-    public StockMovement(StockMovementCreateDTO stockMovementCreateDTO) {
-
-        if(stockMovementCreateDTO.productId() != null) {
-            Product product = new Product();
-            product.setId(stockMovementCreateDTO.productId());
-            this.product = product;
-        }
-        if(stockMovementCreateDTO.storageLocationId() != null) {
-            StorageLocation storageLocation = new StorageLocation();
-            storageLocation.setId(stockMovementCreateDTO.storageLocationId());
-            this.storageLocation = storageLocation;
-        }
-        this.quantity = stockMovementCreateDTO.quantity();
-        this.movementType = stockMovementCreateDTO.movementType();
-        this.reason = stockMovementCreateDTO.reason();
-        this.movementDate = this.getMovementDate();
-        this.reference = stockMovementCreateDTO.reference();
-        this.responsible = stockMovementCreateDTO.responsible();
-        this.notes = stockMovementCreateDTO.notes();
-
+    public StockMovement(StockMovementCreateDTO dto) {
+        applyDto(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType(),
+                dto.reason(), dto.movementDate(), dto.reference(), dto.responsible(), dto.notes());
     }
-    public StockMovement(Long id, StockMovementUpdateDTO stockMovementUpdateDTO) {
-        this.id = id;
-        if(stockMovementUpdateDTO.productId() != null) {
-            Product product = new Product();
-            product.setId(stockMovementUpdateDTO.productId());
-            this.product = product;
-        }
-            if(stockMovementUpdateDTO.storageLocationId() != null) {
-            StorageLocation storageLocation = new StorageLocation();
-            storageLocation.setId(stockMovementUpdateDTO.storageLocationId());
-            this.storageLocation = storageLocation;
-        }
-        this.quantity = stockMovementUpdateDTO.quantity();
-        this.movementType = stockMovementUpdateDTO.movementType();
-        this.reason = stockMovementUpdateDTO.reason();
-        this.movementDate = this.getMovementDate();
-        this.reference = stockMovementUpdateDTO.reference();
-        this.responsible = stockMovementUpdateDTO.responsible();
-        this.notes = stockMovementUpdateDTO.notes();
+
+    public void updateFromDTO(StockMovementUpdateDTO dto) {
+        applyDto(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType(),
+                dto.reason(), dto.movementDate(), dto.reference(), dto.responsible(), dto.notes());
     }
+
+    private void applyDto(Long productId, Long storageLocationId, Integer quantity, MovementType movementType,
+                          String reason, LocalDateTime movementDate, String reference,
+                          String responsible, String notes) {
+
+        if (productId != null) {
+            this.product = new Product(productId);
+        }
+
+        if (storageLocationId != null) {
+            this.storageLocation = new StorageLocation(storageLocationId);
+        }
+
+        this.quantity = quantity;
+        this.movementType = movementType;
+        this.reason = reason;
+        this.movementDate = (movementDate != null) ? movementDate : this.movementDate;
+        this.reference = reference;
+        this.responsible = responsible;
+        this.notes = notes;
+    }
+
 }
