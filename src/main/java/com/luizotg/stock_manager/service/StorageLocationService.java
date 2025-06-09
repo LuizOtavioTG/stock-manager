@@ -1,8 +1,10 @@
 package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
+import com.luizotg.stock_manager.dto.storageLocation.StorageLocationUpdateDTO;
 import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.repository.StorageLocationRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +18,8 @@ public class StorageLocationService {
         this.storagelocationRepository = storagelocationRepository;
     }
 
-    public List<StorageLocation> findAllStorageLocations(Pageable pageable) {
-        return storagelocationRepository.findAll();
+    public Page<StorageLocation> findAllStorageLocations(Pageable pageable) {
+        return storagelocationRepository.findAll(pageable);
     }
 
     public StorageLocation saveStorageLocation(StorageLocationCreateDTO entity) {
@@ -29,5 +31,9 @@ public class StorageLocationService {
 
     public void deleteStorageLocationById(Long id) {
         storagelocationRepository.deleteById(id);
+    }
+
+    public StorageLocation updateStorageLocation(Long id, StorageLocationUpdateDTO entity) {
+        StorageLocation existing = findStorageLocationById(id);
     }
 }

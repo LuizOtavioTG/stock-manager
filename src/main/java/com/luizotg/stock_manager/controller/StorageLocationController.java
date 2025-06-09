@@ -4,6 +4,7 @@ package com.luizotg.stock_manager.controller;
 import com.luizotg.stock_manager.dto.inventory.InventoryDetailDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationDetailDTO;
+import com.luizotg.stock_manager.dto.storageLocation.StorageLocationUpdateDTO;
 import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.service.StorageLocationService;
@@ -43,10 +44,20 @@ public class StorageLocationController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<InventoryDetailDTO>> listAllInventories(@PageableDefault (size = 20, sort = "movementDate") Pageable pageable) {
+    public ResponseEntity<Page<StorageLocationDetailDTO>> listAllInventories(@PageableDefault (size = 20, sort = "movementDate") Pageable pageable) {
         Page<StorageLocation> storageLocations = storageLocationService.findAllStorageLocations(pageable);
-        return ResponseEntity.ok(new StorageLocationDetailDTO(storageLocation));
+        Page<StorageLocationDetailDTO> dtoPage = storageLocations.map(StorageLocationDetailDTO::new);
+        return ResponseEntity.ok(dtoPage);
+    }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteStorageLocation(@PathVariable Long id) {
+        storageLocationService.deleteStorageLocationById(id);
+        return ResponseEntity.noContent().build();
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<StorageLocationDetailDTO> updateStorageLocation(@RequestBody @Valid StorageLocationUpdateDTO dto) {
+        StorageLocation storageLocation = storageLocationService
     }
 
 
