@@ -30,7 +30,8 @@ public class StockMovementController {
     public ResponseEntity<StockMovementDetailDTO> createStockMovement(@RequestBody @Valid StockMovementCreateDTO stockMovementCreateDTO) {
         StockMovement stockMovement = stockMovementService.saveStockMovement(stockMovementCreateDTO);
         var uri = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
+                .fromCurrentRequest()
+                .path("/{id}")
                 .buildAndExpand(stockMovement.getId())
                 .toUri();
         return ResponseEntity.created(uri).body(new StockMovementDetailDTO(stockMovement));
@@ -49,7 +50,7 @@ public class StockMovementController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<StockMovementDetailDTO>> findAllStockMovements(@PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
+    public ResponseEntity<Page<StockMovementDetailDTO>> listAllStockMovement(@PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
         Page<StockMovement> stockMovements = stockMovementService.findAllStockMovements(pageable);
         Page<StockMovementDetailDTO> dtoPage = stockMovements.map(StockMovementDetailDTO::new);
         return ResponseEntity.ok(dtoPage);

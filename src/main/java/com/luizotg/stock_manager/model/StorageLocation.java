@@ -17,7 +17,6 @@ import java.util.List;
 @Setter(AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class StorageLocation {
-
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         @EqualsAndHashCode.Include
@@ -45,4 +44,18 @@ public class StorageLocation {
                 this.id = id;
         }
 
+        public StorageLocation(StorageLocationCreateDTO dto) {
+                this.name = dto.name();
+                this.type = dto.type();
+                this.address = dto.address();
+                this.phoneNumber = dto.phoneNumber();
+                this.email = dto.email();
+                this.responsibleName = dto.responsibleName();
+                this.notes = dto.notes();
+                this.capacity = dto.capacity();
+                this.defaultLocation = dto.defaultLocation();
+                this.latitude = dto.latitude();
+                this.longitude = dto.longitude();
+                this.active = true;
+        }
 }
