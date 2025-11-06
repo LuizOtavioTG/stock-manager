@@ -1,11 +1,8 @@
 package com.luizotg.stock_manager.controller;
 
-
-import com.luizotg.stock_manager.dto.inventory.InventoryDetailDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationDetailDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationUpdateDTO;
-import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.service.StorageLocationService;
 import jakarta.transaction.Transactional;
@@ -22,10 +19,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class StorageLocationController {
 
     private final StorageLocationService storageLocationService;
-    private StorageLocationController(StorageLocationService storageLocationService) {
+
+    public StorageLocationController(StorageLocationService storageLocationService) {
         this.storageLocationService = storageLocationService;
     }
-    @PostMapping()
+
+    @PostMapping
     @Transactional
     public ResponseEntity<StorageLocationDetailDTO> createStorageLocation(@RequestBody @Valid StorageLocationCreateDTO dto) {
         StorageLocation storageLocation = storageLocationService.saveStorageLocation(dto);
@@ -44,7 +43,7 @@ public class StorageLocationController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<StorageLocationDetailDTO>> listAllInventories(@PageableDefault (size = 20, sort = "movementDate") Pageable pageable) {
+    public ResponseEntity<Page<StorageLocationDetailDTO>> listAllStorageLocations(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
         Page<StorageLocation> storageLocations = storageLocationService.findAllStorageLocations(pageable);
         Page<StorageLocationDetailDTO> dtoPage = storageLocations.map(StorageLocationDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
@@ -55,9 +54,15 @@ public class StorageLocationController {
         storageLocationService.deleteStorageLocationById(id);
         return ResponseEntity.noContent().build();
     }
+
     @PutMapping("/{id}")
-    public ResponseEntity<StorageLocationDetailDTO> updateStorageLocation(@RequestBody @Valid StorageLocationUpdateDTO dto) {
-        StorageLocation storageLocation = storageLocationService
+    @Transactional
+    public ResponseEntity<StorageLocationDetailDTO> updateStorageLocation(
+            @PathVariable Long id,
+            @RequestBody @Valid StorageLocationUpdateDTO dto
+    ) {
+        StorageLocation storageLocation = storageLocationService.updateStorageLocation(id, dto);
+        return ResponseEntity.ok(new StorageLocationDetailDTO(storageLocation));
     }
 
 
