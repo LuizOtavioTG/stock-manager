@@ -34,26 +34,20 @@ public class Inventory {
 
     public Inventory(InventoryCreateDTO inventoryDTO) {
         if (inventoryDTO.productId() != null) {
-            Product product = new Product();
-            this.product = product;
+            this.product = new Product(inventoryDTO.productId());
         }
         if (inventoryDTO.storageLocationId() != null) {
-            StorageLocation storageLocation = new StorageLocation();
-            this.storageLocation = storageLocation;
+            this.storageLocation = new StorageLocation(inventoryDTO.storageLocationId());
         }
         this.quantity = inventoryDTO.quantity();
     }
     public void updateFromDTO(InventoryUpdateDTO dto) {
         if (dto.productId() != null) {
-            Product product = new Product();
-            product.setId(dto.productId());
-            this.product = product;
+            this.product = new Product(dto.productId());
         }
 
         if (dto.storageLocationId() != null) {
-            StorageLocation storageLocation = new StorageLocation();
-            storageLocation.setId(dto.storageLocationId());
-            this.storageLocation = storageLocation;
+            this.storageLocation = new StorageLocation(dto.storageLocationId());
         }
 
         this.quantity = dto.quantity();
