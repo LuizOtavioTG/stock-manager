@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.service;
 
+import com.luizotg.stock_manager.dto.supplier.SupplierCreateDTO;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.SupplierRepository;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,9 @@ public class SupplierService {
         return supplierRepository.findAll();
     }
 
-    public Supplier saveSupplier(Supplier entity) {
-        return supplierRepository.save(entity);
+    public Supplier saveSupplier(SupplierCreateDTO dto) {
+        Supplier supplier = new Supplier(dto);
+        return supplierRepository.save(supplier);
     }
 
     public void deleteSupplierById(Long id) {
