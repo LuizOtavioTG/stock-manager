@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.supplier.SupplierCreateDTO;
+import com.luizotg.stock_manager.dto.supplier.SupplierUpdateDTO;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.SupplierRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -30,6 +31,12 @@ public class SupplierService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Fornecedor com ID " + id + " não encontrado."
                 ));
+    }
+
+    public Supplier updateSupplier(Long id, SupplierUpdateDTO dto) {
+        Supplier supplier = findSupplierById(id);
+        supplier.updateFromDTO(dto);
+        return supplierRepository.save(supplier);
     }
 
     public void deleteSupplierById(Long id) {

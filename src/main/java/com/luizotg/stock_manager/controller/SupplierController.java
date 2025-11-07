@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.controller;
 
 import com.luizotg.stock_manager.dto.supplier.SupplierCreateDTO;
 import com.luizotg.stock_manager.dto.supplier.SupplierDetailDTO;
+import com.luizotg.stock_manager.dto.supplier.SupplierUpdateDTO;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.service.SupplierService;
 import jakarta.transaction.Transactional;
@@ -10,12 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
@@ -53,6 +49,22 @@ public class SupplierController {
         Page<Supplier> suppliers = supplierService.findAllSuppliers(pageable);
         Page<SupplierDetailDTO> dtoPage = suppliers.map(SupplierDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
+    }
+
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<SupplierDetailDTO> updateSupplier(
+            @PathVariable Long id,
+            @RequestBody @Valid SupplierUpdateDTO dto
+    ) {
+        Supplier supplier = supplierService.updateSupplier(id, dto);
+        return ResponseEntity.ok(new SupplierDetailDTO(supplier));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSupplier(@PathVariable Long id) {
+        supplierService.deleteSupplierById(id);
+        return ResponseEntity.noContent().build();
     }
 
 
