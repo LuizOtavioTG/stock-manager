@@ -39,6 +39,10 @@ public class Category {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
 
     public Category( String name, String description, Category parent, List<Category> children) {
         this.name = name;

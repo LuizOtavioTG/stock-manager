@@ -36,6 +36,10 @@ public class StockMovement {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
 
     @PrePersist
     public void prePersist() {
