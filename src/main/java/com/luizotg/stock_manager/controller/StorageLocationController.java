@@ -2,6 +2,8 @@ package com.luizotg.stock_manager.controller;
 
 
 import com.luizotg.stock_manager.dto.inventory.InventoryDetailDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockMovementDetailDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationDetailDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationUpdateDTO;
@@ -51,15 +53,22 @@ public class StorageLocationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteStorageLocation(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteStorageLocation(
+            @PathVariable
+            Long id
+    ){
         storageLocationService.deleteStorageLocationById(id);
         return ResponseEntity.noContent().build();
     }
     @PutMapping("/{id}")
-    public ResponseEntity<StorageLocationDetailDTO> updateStorageLocation(@RequestBody @Valid StorageLocationUpdateDTO dto) {
-        StorageLocation storageLocation = storageLocationService
+    public ResponseEntity<StorageLocationDetailDTO> updateStorageLocation(
+            @RequestBody
+            @Valid
+            Long id,
+            StorageLocationUpdateDTO dto
+    ){
+        StorageLocation storageLocation = storageLocationService.updateStorageLocation(id, dto);
+        return ResponseEntity.ok(new StorageLocationDetailDTO(storageLocation));
     }
-
-
 
 }
