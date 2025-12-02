@@ -4,36 +4,44 @@ import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationUpdateDTO;
 import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.repository.StorageLocationRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class StorageLocationService {
 
-    private final StorageLocationRepository storagelocationRepository;
-    public StorageLocationService(StorageLocationRepository storagelocationRepository) {
-        this.storagelocationRepository = storagelocationRepository;
+    private final StorageLocationRepository storageLocationRepository;
+
+    public StorageLocationService(StorageLocationRepository storageLocationRepository) {
+        this.storageLocationRepository = storageLocationRepository;
     }
 
     public Page<StorageLocation> findAllStorageLocations(Pageable pageable) {
-        return storagelocationRepository.findAll(pageable);
+        return storageLocationRepository.findAll(pageable);
     }
 
     public StorageLocation saveStorageLocation(StorageLocationCreateDTO entity) {
         StorageLocation storageLocation = new StorageLocation(entity);
-        return storagelocationRepository.save(storageLocation);
+        return storageLocationRepository.save(storageLocation);
     }
+
     public StorageLocation findStorageLocationById(Long id) {
-        return storagelocationRepository.findById(id).orElse(null);}
+        return storageLocationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Local de armazenamento com ID " + id + " não encontrado."
+                ));
+    }
 
     public void deleteStorageLocationById(Long id) {
-        storagelocationRepository.deleteById(id);
+        StorageLocation storageLocation = findStorageLocationById(id);
+        storageLocationRepository.delete(storageLocation);
     }
 
     public StorageLocation updateStorageLocation(Long id, StorageLocationUpdateDTO entity) {
         StorageLocation existing = findStorageLocationById(id);
+        existing.updateFromDTO(entity);
+        return storageLocationRepository.save(existing);
     }
 }

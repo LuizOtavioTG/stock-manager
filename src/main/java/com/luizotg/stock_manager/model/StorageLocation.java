@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.model;
 
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
+import com.luizotg.stock_manager.dto.storageLocation.StorageLocationUpdateDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -57,5 +58,19 @@ public class StorageLocation {
                 this.latitude = dto.latitude();
                 this.longitude = dto.longitude();
                 this.active = true;
+        }
+
+        public void updateFromDTO(StorageLocationUpdateDTO dto) {
+                if (dto.name() != null) setName(dto.name());
+                if (dto.type() != null) setType(dto.type());
+                if (dto.address() != null) setAddress(dto.address());
+                if (dto.phoneNumber() != null) setPhoneNumber(dto.phoneNumber());
+                if (dto.email() != null) setEmail(dto.email());
+                if (dto.responsibleName() != null) setResponsibleName(dto.responsibleName());
+                if (dto.notes() != null) setNotes(dto.notes());
+                if (dto.capacity() != null) setCapacity(dto.capacity());
+                if (dto.defaultLocation() != null) setDefaultLocation(dto.defaultLocation());
+                if (dto.latitude() != null) setLatitude(dto.latitude());
+                if (dto.longitude() != null) setLongitude(dto.longitude());
         }
 }

@@ -1,10 +1,13 @@
 package com.luizotg.stock_manager.service;
 
+import com.luizotg.stock_manager.dto.supplier.SupplierCreateDTO;
+import com.luizotg.stock_manager.dto.supplier.SupplierUpdateDTO;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.SupplierRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class SupplierService {
@@ -14,15 +17,30 @@ public class SupplierService {
         this.supplierRepository = supplierRepository;
     }
 
-    public List<Supplier> findAllSuppliers() {
-        return supplierRepository.findAll();
+    public Page<Supplier> findAllSuppliers(Pageable pageable) {
+        return supplierRepository.findAll(pageable);
     }
 
-    public Supplier saveSupplier(Supplier entity) {
-        return supplierRepository.save(entity);
+    public Supplier saveSupplier(SupplierCreateDTO dto) {
+        Supplier supplier = new Supplier(dto);
+        return supplierRepository.save(supplier);
+    }
+
+    public Supplier findSupplierById(Long id) {
+        return supplierRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Fornecedor com ID " + id + " não encontrado."
+                ));
+    }
+
+    public Supplier updateSupplier(Long id, SupplierUpdateDTO dto) {
+        Supplier supplier = findSupplierById(id);
+        supplier.updateFromDTO(dto);
+        return supplierRepository.save(supplier);
     }
 
     public void deleteSupplierById(Long id) {
-        supplierRepository.deleteById(id);
+        Supplier supplier = findSupplierById(id);
+        supplierRepository.delete(supplier);
     }
 }
