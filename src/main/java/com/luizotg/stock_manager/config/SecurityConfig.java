@@ -31,9 +31,7 @@ public class SecurityConfig {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final AuthProperties authProperties;
     private final Environment environment;
-    private final JwtProperties jwtProperties;
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/login",
