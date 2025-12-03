@@ -12,6 +12,7 @@ import java.util.Set;
 @Entity(name = "User")
 @Table(name = "users")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
