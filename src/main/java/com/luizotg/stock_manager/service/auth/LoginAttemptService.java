@@ -4,6 +4,8 @@ import com.luizotg.stock_manager.config.AuthProperties;
 import com.luizotg.stock_manager.model.User;
 import com.luizotg.stock_manager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class LoginAttemptService {
+
+    private static final Logger log = LoggerFactory.getLogger(LoginAttemptService.class);
 
     private final UserRepository userRepository;
     private final AuthProperties authProperties;
@@ -37,6 +41,7 @@ public class LoginAttemptService {
                 LocalDateTime lockUntil = LocalDateTime.now(clock).plus(authProperties.getLockDuration());
                 user.setLockedUntil(lockUntil);
                 user.setFailedAttempts(0);
+                log.warn("login.lockout user={} until={}", login, lockUntil);
             }
             userRepository.save(user);
         });

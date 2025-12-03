@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -24,6 +25,7 @@ public class SupplierController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER)")
     @Transactional
     public ResponseEntity<SupplierDetailDTO> createSupplier(
             @RequestBody @Valid SupplierCreateDTO dto
@@ -37,12 +39,14 @@ public class SupplierController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER, T(com.luizotg.stock_manager.security.Roles).USER)")
     public ResponseEntity<SupplierDetailDTO> detailSupplier(@PathVariable Long id) {
         Supplier supplier = supplierService.findSupplierById(id);
         return ResponseEntity.ok(new SupplierDetailDTO(supplier));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER, T(com.luizotg.stock_manager.security.Roles).USER)")
     public ResponseEntity<Page<SupplierDetailDTO>> listSuppliers(
             @PageableDefault(size = 20, sort = "name") Pageable pageable
     ) {
@@ -52,6 +56,7 @@ public class SupplierController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER)")
     @Transactional
     public ResponseEntity<SupplierDetailDTO> updateSupplier(
             @PathVariable Long id,
@@ -62,6 +67,7 @@ public class SupplierController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole(T(com.luizotg.stock_manager.security.Roles).ADMIN)")
     public ResponseEntity<Void> deleteSupplier(@PathVariable Long id) {
         supplierService.deleteSupplierById(id);
         return ResponseEntity.noContent().build();

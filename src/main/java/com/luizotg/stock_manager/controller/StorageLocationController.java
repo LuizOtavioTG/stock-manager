@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -25,6 +26,7 @@ public class StorageLocationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER)")
     @Transactional
     public ResponseEntity<StorageLocationDetailDTO> createStorageLocation(@RequestBody @Valid StorageLocationCreateDTO dto) {
         StorageLocation storageLocation = storageLocationService.saveStorageLocation(dto);
@@ -37,12 +39,14 @@ public class StorageLocationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER, T(com.luizotg.stock_manager.security.Roles).USER)")
     public ResponseEntity<StorageLocationDetailDTO> detailStorageLocation(@PathVariable Long id) {
         StorageLocation storageLocation = storageLocationService.findStorageLocationById(id);
         return ResponseEntity.ok(new StorageLocationDetailDTO(storageLocation));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER, T(com.luizotg.stock_manager.security.Roles).USER)")
     public ResponseEntity<Page<StorageLocationDetailDTO>> listAllStorageLocations(@PageableDefault(size = 20, sort = "id") Pageable pageable) {
         Page<StorageLocation> storageLocations = storageLocationService.findAllStorageLocations(pageable);
         Page<StorageLocationDetailDTO> dtoPage = storageLocations.map(StorageLocationDetailDTO::new);
@@ -50,6 +54,7 @@ public class StorageLocationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole(T(com.luizotg.stock_manager.security.Roles).ADMIN)")
     public ResponseEntity<Void> deleteStorageLocation(
             @PathVariable
             Long id
@@ -59,6 +64,7 @@ public class StorageLocationController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole(T(com.luizotg.stock_manager.security.Roles).ADMIN, T(com.luizotg.stock_manager.security.Roles).MANAGER)")
     @Transactional
     public ResponseEntity<StorageLocationDetailDTO> updateStorageLocation(
             @PathVariable Long id,

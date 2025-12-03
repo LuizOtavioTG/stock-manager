@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EntityListeners(AuditingEntityListener.class)
 public class Role {
 
     @Id
@@ -31,9 +35,11 @@ public class Role {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @CreatedBy
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
+    @LastModifiedBy
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 }

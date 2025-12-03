@@ -56,8 +56,12 @@ public class AuthController {
             return ResponseEntity.ok(new TokenResponse(accessToken, refreshToken));
         } catch (BadCredentialsException e) {
             loginAttemptService.onFailure(request.username());
+            log.warn("login.failed user={} ip={} agent={} reason=bad_credentials", request.username(),
+                    httpServletRequest.getRemoteAddr(), httpServletRequest.getHeader("User-Agent"));
             throw e;
         } catch (LockedException e) {
+            log.warn("login.locked user={} ip={} agent={}", request.username(),
+                    httpServletRequest.getRemoteAddr(), httpServletRequest.getHeader("User-Agent"));
             throw e;
         }
     }

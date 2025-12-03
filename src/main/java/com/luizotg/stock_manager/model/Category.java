@@ -8,6 +8,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,6 +25,7 @@ import java.util.function.Function;
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Setter(AccessLevel.PRIVATE)
+@EntityListeners(AuditingEntityListener.class)
 public class Category {
     @Id@GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
@@ -39,8 +43,10 @@ public class Category {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+    @CreatedBy
     @Column(name = "created_by", length = 100)
     private String createdBy;
+    @LastModifiedBy
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 

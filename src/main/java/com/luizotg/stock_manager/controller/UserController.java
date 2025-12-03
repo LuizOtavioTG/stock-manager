@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole(T(com.luizotg.stock_manager.security.Roles).ADMIN)")
 public class UserController {
 
     private final UserService userService;
