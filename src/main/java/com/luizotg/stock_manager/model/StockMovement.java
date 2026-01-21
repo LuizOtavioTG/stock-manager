@@ -1,7 +1,6 @@
 package com.luizotg.stock_manager.model;
 
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
-import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -30,6 +29,7 @@ public class StockMovement {
     @JoinColumn(name = "storage_location_id", nullable = false)
     private StorageLocation storageLocation;
     private Integer quantity;
+    @Enumerated(EnumType.STRING)
     private MovementType movementType;
     private String reason;
     private LocalDateTime movementDate;
@@ -55,11 +55,6 @@ public class StockMovement {
     }
 
     public StockMovement(StockMovementCreateDTO dto) {
-        applyDto(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType(),
-                dto.reason(), dto.movementDate(), dto.reference(), dto.responsible(), dto.notes());
-    }
-
-    public void updateFromDTO(StockMovementUpdateDTO dto) {
         applyDto(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType(),
                 dto.reason(), dto.movementDate(), dto.reference(), dto.responsible(), dto.notes());
     }
