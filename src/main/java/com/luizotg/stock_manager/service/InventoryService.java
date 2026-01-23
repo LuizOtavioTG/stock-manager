@@ -2,13 +2,16 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.model.Inventory;
 import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.Product;
+import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.repository.InventoryRepository;
 import com.luizotg.stock_manager.repository.ProductRepository;
 import com.luizotg.stock_manager.repository.StorageLocationRepository;
+import com.luizotg.stock_manager.repository.StockMovementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -23,14 +26,17 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final ProductRepository productRepository;
     private final StorageLocationRepository storageLocationRepository;
+    private final StockMovementRepository stockMovementRepository;
 
     public InventoryService(
             InventoryRepository inventoryRepository,
             ProductRepository productRepository,
-            StorageLocationRepository storageLocationRepository) {
+            StorageLocationRepository storageLocationRepository,
+            StockMovementRepository stockMovementRepository) {
         this.inventoryRepository = inventoryRepository;
         this.productRepository = productRepository;
         this.storageLocationRepository = storageLocationRepository;
+        this.stockMovementRepository = stockMovementRepository;
     }
 
     public Page<Inventory> findAllInventories(Pageable pageable) {
@@ -39,10 +45,10 @@ public class InventoryService {
 
     @Transactional
     public Inventory saveInventory(InventoryCreateDTO inventoryDTO) {
-        if (inventoryDTO.quantity() != 0) {
+        if (inventoryDTO.quantity() < 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Quantidade de Inventário só pode ser criado com saldo zero. Use uma movimentação de estoque para alterar o saldo."
+                    "Quantidade inicial do inventário não pode ser negativa."
             );
         }
 
@@ -59,7 +65,25 @@ public class InventoryService {
         }
 
         Inventory inventory = new Inventory(product, storageLocation, 0);
-        return inventoryRepository.save(inventory);
+        Inventory saved = inventoryRepository.save(inventory);
+
+        if (inventoryDTO.quantity() > 0) {
+            StockMovement initialBalance = new StockMovement(new StockMovementCreateDTO(
+                    product.getId(),
+                    storageLocation.getId(),
+                    inventoryDTO.quantity(),
+                    MovementType.INITIAL_BALANCE,
+                    "Saldo inicial do inventário.",
+                    null,
+                    "INVENTORY-" + saved.getId(),
+                    null,
+                    null
+            ));
+            stockMovementRepository.save(initialBalance);
+            saved.addQuantity(inventoryDTO.quantity());
+        }
+
+        return inventoryRepository.save(saved);
     }
 
     public Inventory findInventoryById(Long id) {
