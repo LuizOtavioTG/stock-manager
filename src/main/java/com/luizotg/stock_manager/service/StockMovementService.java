@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
+import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.repository.StockMovementRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,10 +30,28 @@ public class StockMovementService {
 
     @Transactional
     public StockMovement saveStockMovement(StockMovementCreateDTO dto) {
+        validateMovement(dto);
         StockMovement stockMovement = new StockMovement(dto);
         StockMovement saved = stockmovementRepository.save(stockMovement);
         inventoryService.applyStockMovement(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType());
         return saved;
+    }
+
+    private void validateMovement(StockMovementCreateDTO dto) {
+        if (dto.movementType() == MovementType.TRANSFER) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "TRANSFER precisa de origem e destino e será tratado em um fluxo separado."
+            );
+        }
+
+        if (dto.movementType() == MovementType.ADJUSTMENT
+                && (dto.reason() == null || dto.reason().isBlank())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "ADJUSTMENT exige motivo."
+            );
+        }
     }
 
     public void deleteStockMovementById(Long id) {

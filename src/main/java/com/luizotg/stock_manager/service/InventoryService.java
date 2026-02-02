@@ -121,10 +121,13 @@ public class InventoryService {
                 .orElseGet(() -> inventoryRepository.save(new Inventory(product, storageLocation, 0)));
 
         try {
-            if (movementType == MovementType.OUTBOUND) {
-                inventory.removeQuantity(quantity);
-            } else {
-                inventory.addQuantity(quantity);
+            switch (movementType) {
+                case INBOUND, RETURN, ADJUSTMENT, INITIAL_BALANCE -> inventory.addQuantity(quantity);
+                case OUTBOUND, LOSS, DAMAGED -> inventory.removeQuantity(quantity);
+                case TRANSFER -> throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "TRANSFER precisa de origem e destino e será tratado em um fluxo separado."
+                );
             }
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
