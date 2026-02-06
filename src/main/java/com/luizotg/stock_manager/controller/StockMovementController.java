@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.controller;
 
 
+import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementDetailDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping("/stock-movement")
+@RequestMapping({"/stock-movement", "/api/stock-movements"})
 public class StockMovementController {
 
     private final StockMovementService stockMovementService;
@@ -31,6 +32,18 @@ public class StockMovementController {
     @Transactional
     public ResponseEntity<StockMovementDetailDTO> createStockMovement(@RequestBody @Valid StockMovementCreateDTO stockMovementCreateDTO) {
         StockMovement stockMovement = stockMovementService.saveStockMovement(stockMovementCreateDTO);
+        var uri = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(stockMovement.getId())
+                .toUri();
+        return ResponseEntity.created(uri).body(new StockMovementDetailDTO(stockMovement));
+    }
+
+    @PostMapping("/inbound")
+    @Transactional
+    public ResponseEntity<StockMovementDetailDTO> createInboundMovement(@RequestBody @Valid StockInboundRequestDTO dto) {
+        StockMovement stockMovement = stockMovementService.saveInboundMovement(dto);
         var uri = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
