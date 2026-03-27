@@ -57,4 +57,11 @@ public class Inventory {
         this.quantity = newQuantity;
     }
 
+    public void adjustQuantityTo(Integer newQuantity) {
+        if (newQuantity < 0) {
+            throw new IllegalArgumentException("Saldo ajustado não pode ser negativo.");
+        }
+        this.quantity = newQuantity;
+    }
+
 }

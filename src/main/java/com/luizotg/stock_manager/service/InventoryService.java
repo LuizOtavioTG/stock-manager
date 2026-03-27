@@ -158,4 +158,37 @@ public class InventoryService {
         return inventoryRepository.save(inventory);
     }
 
+    public StockAdjustmentResult applyAdjustment(Long productId, Long storageLocationId, Integer newQuantity) {
+        productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + productId + " não encontrado."));
+        storageLocationRepository.findById(storageLocationId)
+                .orElseThrow(() -> new EntityNotFoundException("Local de armazenamento com ID " + storageLocationId + " não encontrado."));
+
+        Inventory inventory = inventoryRepository
+                .findByProductIdAndStorageLocationId(productId, storageLocationId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Inventário não encontrado para este produto e local de armazenamento."
+                ));
+
+        Integer previousQuantity = inventory.getQuantity();
+
+        try {
+            inventory.adjustQuantityTo(newQuantity);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
+        }
+
+        Inventory saved = inventoryRepository.save(inventory);
+        return new StockAdjustmentResult(saved, previousQuantity, newQuantity, newQuantity - previousQuantity);
+    }
+
+    public record StockAdjustmentResult(
+            Inventory inventory,
+            Integer previousQuantity,
+            Integer newQuantity,
+            Integer difference
+    ) {
+    }
+
 }

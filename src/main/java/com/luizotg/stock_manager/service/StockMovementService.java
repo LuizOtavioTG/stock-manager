@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.service;
 
+import com.luizotg.stock_manager.dto.stockMovement.StockAdjustmentRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
@@ -81,6 +82,37 @@ public class StockMovementService {
                 dto.reference(),
                 dto.responsible(),
                 dto.notes()
+        ));
+
+        return stockmovementRepository.save(stockMovement);
+    }
+
+    @Transactional
+    public StockMovement saveAdjustmentMovement(StockAdjustmentRequestDTO dto) {
+        InventoryService.StockAdjustmentResult adjustment = inventoryService.applyAdjustment(
+                dto.productId(),
+                dto.storageLocationId(),
+                dto.newQuantity()
+        );
+
+        Integer movementQuantity = Math.abs(adjustment.difference());
+        String balanceNotes = "Saldo anterior: " + adjustment.previousQuantity()
+                + ". Novo saldo: " + adjustment.newQuantity()
+                + ". Diferença: " + adjustment.difference() + ".";
+        String notes = dto.notes() == null || dto.notes().isBlank()
+                ? balanceNotes
+                : dto.notes() + " " + balanceNotes;
+
+        StockMovement stockMovement = new StockMovement(new StockMovementCreateDTO(
+                dto.productId(),
+                dto.storageLocationId(),
+                movementQuantity,
+                MovementType.ADJUSTMENT,
+                dto.reason(),
+                null,
+                null,
+                dto.responsible(),
+                notes
         ));
 
         return stockmovementRepository.save(stockMovement);
