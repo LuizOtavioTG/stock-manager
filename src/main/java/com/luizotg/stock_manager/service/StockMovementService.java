@@ -3,6 +3,7 @@ package com.luizotg.stock_manager.service;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
 import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.repository.StockMovementRepository;
@@ -52,6 +53,29 @@ public class StockMovementService {
                 dto.storageLocationId(),
                 dto.quantity(),
                 MovementType.INBOUND,
+                dto.reason(),
+                null,
+                dto.reference(),
+                dto.responsible(),
+                dto.notes()
+        ));
+
+        return stockmovementRepository.save(stockMovement);
+    }
+
+    @Transactional
+    public StockMovement saveOutboundMovement(StockOutboundRequestDTO dto) {
+        inventoryService.applyOutboundStockMovement(
+                dto.productId(),
+                dto.storageLocationId(),
+                dto.quantity()
+        );
+
+        StockMovement stockMovement = new StockMovement(new StockMovementCreateDTO(
+                dto.productId(),
+                dto.storageLocationId(),
+                dto.quantity(),
+                MovementType.OUTBOUND,
                 dto.reason(),
                 null,
                 dto.reference(),

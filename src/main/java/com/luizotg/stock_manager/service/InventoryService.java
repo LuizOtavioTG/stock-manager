@@ -136,4 +136,26 @@ public class InventoryService {
         return inventoryRepository.save(inventory);
     }
 
+    public Inventory applyOutboundStockMovement(Long productId, Long storageLocationId, Integer quantity) {
+        productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + productId + " não encontrado."));
+        storageLocationRepository.findById(storageLocationId)
+                .orElseThrow(() -> new EntityNotFoundException("Local de armazenamento com ID " + storageLocationId + " não encontrado."));
+
+        Inventory inventory = inventoryRepository
+                .findByProductIdAndStorageLocationId(productId, storageLocationId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Inventário não encontrado para este produto e local de armazenamento."
+                ));
+
+        try {
+            inventory.removeQuantity(quantity);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
+        }
+
+        return inventoryRepository.save(inventory);
+    }
+
 }

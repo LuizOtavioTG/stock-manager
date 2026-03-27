@@ -5,6 +5,7 @@ import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementDetailDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
 import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.service.StockMovementService;
 import jakarta.transaction.Transactional;
@@ -44,6 +45,18 @@ public class StockMovementController {
     @Transactional
     public ResponseEntity<StockMovementDetailDTO> createInboundMovement(@RequestBody @Valid StockInboundRequestDTO dto) {
         StockMovement stockMovement = stockMovementService.saveInboundMovement(dto);
+        var uri = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(stockMovement.getId())
+                .toUri();
+        return ResponseEntity.created(uri).body(new StockMovementDetailDTO(stockMovement));
+    }
+
+    @PostMapping("/outbound")
+    @Transactional
+    public ResponseEntity<StockMovementDetailDTO> createOutboundMovement(@RequestBody @Valid StockOutboundRequestDTO dto) {
+        StockMovement stockMovement = stockMovementService.saveOutboundMovement(dto);
         var uri = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
