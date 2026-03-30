@@ -80,7 +80,7 @@ public class InventoryService {
                     null
             ));
             stockMovementRepository.save(initialBalance);
-            saved.addQuantity(inventoryDTO.quantity());
+            saved.increaseQuantity(inventoryDTO.quantity());
         }
 
         return inventoryRepository.save(saved);
@@ -122,8 +122,8 @@ public class InventoryService {
 
         try {
             switch (movementType) {
-                case INBOUND, RETURN, ADJUSTMENT, INITIAL_BALANCE -> inventory.addQuantity(quantity);
-                case OUTBOUND, LOSS, DAMAGED -> inventory.removeQuantity(quantity);
+                case INBOUND, RETURN, ADJUSTMENT, INITIAL_BALANCE -> inventory.increaseQuantity(quantity);
+                case OUTBOUND, LOSS, DAMAGED -> inventory.decreaseQuantity(quantity);
                 case TRANSFER -> throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "TRANSFER precisa de origem e destino e será tratado em um fluxo separado."
@@ -150,7 +150,7 @@ public class InventoryService {
                 ));
 
         try {
-            inventory.removeQuantity(quantity);
+            inventory.decreaseQuantity(quantity);
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
         }
@@ -174,7 +174,7 @@ public class InventoryService {
         Integer previousQuantity = inventory.getQuantity();
 
         try {
-            inventory.adjustQuantityTo(newQuantity);
+            inventory.adjustQuantity(newQuantity);
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
         }

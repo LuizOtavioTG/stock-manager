@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.model;
 
+import com.luizotg.stock_manager.exception.InsufficientStockException;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,7 +13,6 @@ import java.time.LocalDateTime;
 @Entity(name="Inventory")
 @Table(name="inventory")
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Getter
 @Setter(AccessLevel.PRIVATE)
@@ -45,19 +45,18 @@ public class Inventory {
         this.quantity = quantity;
     }
 
-    public void addQuantity(Integer quantity) {
+    public void increaseQuantity(Integer quantity) {
         this.quantity += quantity;
     }
 
-    public void removeQuantity(Integer quantity) {
-        int newQuantity = this.quantity - quantity;
-        if (newQuantity < 0) {
-            throw new IllegalArgumentException("Saldo insuficiente para a movimentação.");
+    public void decreaseQuantity(Integer quantity) {
+        if (this.quantity < quantity) {
+            throw new InsufficientStockException("Estoque insuficiente.");
         }
-        this.quantity = newQuantity;
+        this.quantity -= quantity;
     }
 
-    public void adjustQuantityTo(Integer newQuantity) {
+    public void adjustQuantity(Integer newQuantity) {
         if (newQuantity < 0) {
             throw new IllegalArgumentException("Saldo ajustado não pode ser negativo.");
         }
