@@ -1,8 +1,10 @@
 package com.luizotg.stock_manager.exception;
 
-public class InsufficientStockException extends IllegalArgumentException {
+import org.springframework.http.HttpStatus;
+
+public class InsufficientStockException extends BusinessException {
 
     public InsufficientStockException(String message) {
-        super(message);
+        super(message, HttpStatus.BAD_REQUEST, "INSUFFICIENT_STOCK");
     }
 }

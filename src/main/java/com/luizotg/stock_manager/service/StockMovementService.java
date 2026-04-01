@@ -5,16 +5,17 @@ import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
+import com.luizotg.stock_manager.exception.BusinessException;
+import com.luizotg.stock_manager.exception.InvalidStockMovementException;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.repository.StockMovementRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class StockMovementService {
@@ -120,37 +121,33 @@ public class StockMovementService {
 
     private void validateMovement(StockMovementCreateDTO dto) {
         if (dto.movementType() == MovementType.TRANSFER) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "TRANSFER precisa de origem e destino e será tratado em um fluxo separado."
-            );
+            throw new InvalidStockMovementException("TRANSFER precisa de origem e destino e será tratado em um fluxo separado.");
         }
 
         if (dto.movementType() == MovementType.ADJUSTMENT
                 && (dto.reason() == null || dto.reason().isBlank())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "ADJUSTMENT exige motivo."
-            );
+            throw new InvalidStockMovementException("ADJUSTMENT exige motivo.");
         }
     }
 
     public void deleteStockMovementById(Long id) {
-        throw new ResponseStatusException(
+        throw new BusinessException(
+                "StockMovement é histórico e não pode ser removida pela API.",
                 HttpStatus.METHOD_NOT_ALLOWED,
-                "StockMovement é histórico e não pode ser removida pela API."
+                "STOCK_MOVEMENT_DELETE_NOT_ALLOWED"
         );
     }
 
     public StockMovement findStockMovementById(Long id) {
         return stockmovementRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Movimento de Estoque com ID " + id + " não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Movimento de Estoque com ID " + id + " não encontrado."));
     }
 
     public StockMovement updateStockMovement(Long id, StockMovementUpdateDTO dto) {
-        throw new ResponseStatusException(
+        throw new BusinessException(
+                "StockMovement é histórico e não pode ser alterada pela API.",
                 HttpStatus.METHOD_NOT_ALLOWED,
-                "StockMovement é histórico e não pode ser alterada pela API."
+                "STOCK_MOVEMENT_UPDATE_NOT_ALLOWED"
         );
     }
 }

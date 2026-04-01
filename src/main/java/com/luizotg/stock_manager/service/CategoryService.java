@@ -2,13 +2,12 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.category.CategoryCreateDTO;
 import com.luizotg.stock_manager.dto.category.CategoryUpdateDTO;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Category;
 import com.luizotg.stock_manager.repository.CategoryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -28,9 +27,8 @@ public class CategoryService {
     public Category saveCategory(CategoryCreateDTO categoryDTO) {
         if (categoryDTO.parentId() != null) {
             Optional<Category> parentCategory = categoryRepository.findById(categoryDTO.parentId());
-            // TODO: Do it on @RestControllerAdvice
             if (parentCategory.isEmpty()) {
-                throw new IllegalArgumentException("Categoria pai não encontrada.");
+                throw new ResourceNotFoundException("Categoria pai não encontrada.");
             }
         }
         Category category = new Category(categoryDTO);
@@ -39,13 +37,13 @@ public class CategoryService {
     }
 
     public void deleteCategoryById(Long id) {
-        categoryRepository.deleteById(id);
+        Category category = findCategoryById(id);
+        categoryRepository.delete(category);
     }
 
     public Category findCategoryById(Long id) {
-        // TODO: Do it on @RestControllerAdvice
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada com o id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com o id: " + id));
     }
 
 

@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.model;
 
 import com.luizotg.stock_manager.exception.InsufficientStockException;
+import com.luizotg.stock_manager.exception.InvalidStockMovementException;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -58,7 +59,7 @@ public class Inventory {
 
     public void adjustQuantity(Integer newQuantity) {
         if (newQuantity < 0) {
-            throw new IllegalArgumentException("Saldo ajustado não pode ser negativo.");
+            throw new InvalidStockMovementException("Saldo ajustado não pode ser negativo.");
         }
         this.quantity = newQuantity;
     }

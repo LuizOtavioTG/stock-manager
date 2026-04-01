@@ -2,19 +2,14 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.product.ProductCreateDTO;
 import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
-import com.luizotg.stock_manager.model.Category;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
-import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.CategoryRepository;
 import com.luizotg.stock_manager.repository.ProductRepository;
 import com.luizotg.stock_manager.repository.SupplierRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 public class ProductService {
@@ -40,7 +35,7 @@ public class ProductService {
 
     public Product findProductById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + id + " não encontrado."));
     }
 
     public Page<Product> findAllProducts(Pageable pageable) {

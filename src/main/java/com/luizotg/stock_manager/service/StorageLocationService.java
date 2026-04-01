@@ -2,9 +2,9 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationCreateDTO;
 import com.luizotg.stock_manager.dto.storageLocation.StorageLocationUpdateDTO;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.repository.StorageLocationRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class StorageLocationService {
 
     public StorageLocation findStorageLocationById(Long id) {
         return storageLocationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Local de armazenamento com ID " + id + " não encontrado."
                 ));
     }

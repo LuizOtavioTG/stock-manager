@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.model;
 
 import com.luizotg.stock_manager.dto.product.ProductCreateDTO;
 import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.repository.CategoryRepository;
 import com.luizotg.stock_manager.repository.SupplierRepository;
 import jakarta.persistence.*;
@@ -80,13 +81,13 @@ public class Product {
 
         if (dto.categoryId() != null) {
             this.category = categoryRepository.findById(dto.categoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
+                    .orElseThrow(() -> new ResourceNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
         }
 
         if (dto.supplierIds() != null) {
             Set<Supplier> suppliers = new HashSet<>(supplierRepository.findAllById(dto.supplierIds()));
             if (suppliers.size() != dto.supplierIds().size()) {
-                throw new EntityNotFoundException("Um ou mais fornecedores não foram encontrados.");
+                throw new ResourceNotFoundException("Um ou mais fornecedores não foram encontrados.");
             }
             this.suppliers = suppliers;
         }
@@ -105,14 +106,14 @@ public class Product {
 
         if (dto.categoryId() != null) {
             Category category = categoryRepository.findById(dto.categoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
+                    .orElseThrow(() -> new ResourceNotFoundException("Categoria com ID " + dto.categoryId() + " não encontrada."));
             setCategory(category);
         }
 
         if (dto.supplierIds() != null) {
             Set<Supplier> suppliers = new HashSet<>(supplierRepository.findAllById(dto.supplierIds()));
             if (suppliers.size() != dto.supplierIds().size()) {
-                throw new EntityNotFoundException("Um ou mais fornecedores não foram encontrados.");
+                throw new ResourceNotFoundException("Um ou mais fornecedores não foram encontrados.");
             }
             setSuppliers(suppliers);
         }
