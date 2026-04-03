@@ -17,18 +17,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiError> handleBusinessException(BusinessException exception, HttpServletRequest request) {
-        return buildResponse(exception.getStatus(), exception.getCode(), exception.getMessage(), request.getRequestURI(), null);
+        return buildResponse(exception.getStatus(), exception.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiError> handleEntityNotFoundException(EntityNotFoundException exception, HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", exception.getMessage(), request.getRequestURI(), null);
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException exception, HttpServletRequest request) {
         HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
-        return buildResponse(status, "REQUEST_ERROR", exception.getReason(), request.getRequestURI(), null);
+        return buildResponse(status, exception.getReason(), request.getRequestURI(), null);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -41,18 +41,27 @@ public class GlobalExceptionHandler {
 
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
-                "VALIDATION_ERROR",
                 "Requisição inválida.",
                 request.getRequestURI(),
                 fields
         );
     }
 
-    private ResponseEntity<ApiError> buildResponse(HttpStatus status, String code, String message, String path, List<FieldErrorDetail> fields) {
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleUnexpectedException(Exception exception, HttpServletRequest request) {
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Erro interno inesperado.",
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    private ResponseEntity<ApiError> buildResponse(HttpStatus status, String message, String path, List<FieldErrorDetail> fields) {
         ApiError error = new ApiError(
                 LocalDateTime.now(),
                 status.value(),
-                code,
+                status.getReasonPhrase(),
                 message,
                 path,
                 fields
@@ -63,7 +72,7 @@ public class GlobalExceptionHandler {
     public record ApiError(
             LocalDateTime timestamp,
             Integer status,
-            String code,
+            String error,
             String message,
             String path,
             List<FieldErrorDetail> fields
