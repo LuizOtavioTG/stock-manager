@@ -3,7 +3,6 @@ package com.luizotg.stock_manager.controller;
 
 import com.luizotg.stock_manager.dto.stockMovement.StockAdjustmentRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
-import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementDetailDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
@@ -25,17 +24,6 @@ public class StockMovementController {
 
     public StockMovementController(StockMovementService stockMovementService) {
         this.stockMovementService = stockMovementService;
-    }
-
-    @PostMapping()
-    public ResponseEntity<StockMovementDetailDTO> createStockMovement(@RequestBody @Valid StockMovementCreateDTO stockMovementCreateDTO) {
-        StockMovement stockMovement = stockMovementService.saveStockMovement(stockMovementCreateDTO);
-        var uri = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(stockMovement.getId())
-                .toUri();
-        return ResponseEntity.created(uri).body(new StockMovementDetailDTO(stockMovement));
     }
 
     @PostMapping("/inbound")

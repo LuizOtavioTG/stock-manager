@@ -33,16 +33,9 @@ public class StockMovementService {
     }
 
     @Transactional
-    public StockMovement saveStockMovement(StockMovementCreateDTO dto) {
-        validateMovement(dto);
-        StockMovement stockMovement = new StockMovement(dto);
-        StockMovement saved = stockmovementRepository.save(stockMovement);
-        inventoryService.applyStockMovement(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType());
-        return saved;
-    }
-
-    @Transactional
     public StockMovement registerInbound(StockInboundRequestDTO dto) {
+        validatePositiveQuantity(dto.quantity(), "Quantidade de entrada deve ser maior que zero.");
+
         inventoryService.applyStockMovement(
                 dto.productId(),
                 dto.storageLocationId(),
@@ -50,7 +43,7 @@ public class StockMovementService {
                 MovementType.INBOUND
         );
 
-        StockMovement stockMovement = new StockMovement(new StockMovementCreateDTO(
+        return saveMovement(new StockMovementCreateDTO(
                 dto.productId(),
                 dto.storageLocationId(),
                 dto.quantity(),
@@ -61,19 +54,19 @@ public class StockMovementService {
                 dto.responsible(),
                 dto.notes()
         ));
-
-        return stockmovementRepository.save(stockMovement);
     }
 
     @Transactional
     public StockMovement registerOutbound(StockOutboundRequestDTO dto) {
+        validatePositiveQuantity(dto.quantity(), "Quantidade de saída deve ser maior que zero.");
+
         inventoryService.applyOutboundStockMovement(
                 dto.productId(),
                 dto.storageLocationId(),
                 dto.quantity()
         );
 
-        StockMovement stockMovement = new StockMovement(new StockMovementCreateDTO(
+        return saveMovement(new StockMovementCreateDTO(
                 dto.productId(),
                 dto.storageLocationId(),
                 dto.quantity(),
@@ -84,12 +77,12 @@ public class StockMovementService {
                 dto.responsible(),
                 dto.notes()
         ));
-
-        return stockmovementRepository.save(stockMovement);
     }
 
     @Transactional
     public StockMovement registerAdjustment(StockAdjustmentRequestDTO dto) {
+        validateAdjustment(dto);
+
         InventoryService.StockAdjustmentResult adjustment = inventoryService.applyAdjustment(
                 dto.productId(),
                 dto.storageLocationId(),
@@ -104,7 +97,7 @@ public class StockMovementService {
                 ? balanceNotes
                 : dto.notes() + " " + balanceNotes;
 
-        StockMovement stockMovement = new StockMovement(new StockMovementCreateDTO(
+        return saveMovement(new StockMovementCreateDTO(
                 dto.productId(),
                 dto.storageLocationId(),
                 movementQuantity,
@@ -115,17 +108,24 @@ public class StockMovementService {
                 dto.responsible(),
                 notes
         ));
-
-        return stockmovementRepository.save(stockMovement);
     }
 
-    private void validateMovement(StockMovementCreateDTO dto) {
-        if (dto.movementType() == MovementType.TRANSFER) {
-            throw new InvalidStockMovementException("TRANSFER precisa de origem e destino e será tratado em um fluxo separado.");
+    private StockMovement saveMovement(StockMovementCreateDTO dto) {
+        return stockmovementRepository.save(new StockMovement(dto));
+    }
+
+    private void validatePositiveQuantity(Integer quantity, String message) {
+        if (quantity == null || quantity <= 0) {
+            throw new InvalidStockMovementException(message);
+        }
+    }
+
+    private void validateAdjustment(StockAdjustmentRequestDTO dto) {
+        if (dto.newQuantity() == null || dto.newQuantity() < 0) {
+            throw new InvalidStockMovementException("Novo saldo ajustado deve ser maior ou igual a zero.");
         }
 
-        if (dto.movementType() == MovementType.ADJUSTMENT
-                && (dto.reason() == null || dto.reason().isBlank())) {
+        if (dto.reason() == null || dto.reason().isBlank()) {
             throw new InvalidStockMovementException("ADJUSTMENT exige motivo.");
         }
     }
