@@ -42,7 +42,7 @@ public class StockMovementService {
     }
 
     @Transactional
-    public StockMovement saveInboundMovement(StockInboundRequestDTO dto) {
+    public StockMovement registerInbound(StockInboundRequestDTO dto) {
         inventoryService.applyStockMovement(
                 dto.productId(),
                 dto.storageLocationId(),
@@ -66,7 +66,7 @@ public class StockMovementService {
     }
 
     @Transactional
-    public StockMovement saveOutboundMovement(StockOutboundRequestDTO dto) {
+    public StockMovement registerOutbound(StockOutboundRequestDTO dto) {
         inventoryService.applyOutboundStockMovement(
                 dto.productId(),
                 dto.storageLocationId(),
@@ -89,7 +89,7 @@ public class StockMovementService {
     }
 
     @Transactional
-    public StockMovement saveAdjustmentMovement(StockAdjustmentRequestDTO dto) {
+    public StockMovement registerAdjustment(StockAdjustmentRequestDTO dto) {
         InventoryService.StockAdjustmentResult adjustment = inventoryService.applyAdjustment(
                 dto.productId(),
                 dto.storageLocationId(),
