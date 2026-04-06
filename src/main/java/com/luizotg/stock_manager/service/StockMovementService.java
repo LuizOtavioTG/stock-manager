@@ -32,6 +32,14 @@ public class StockMovementService {
         return stockmovementRepository.findAll(pageable);
     }
 
+    public Page<StockMovement> findStockMovementsByProductId(Long productId, Pageable pageable) {
+        return stockmovementRepository.findByProductId(productId, pageable);
+    }
+
+    public Page<StockMovement> findStockMovementsByStorageLocationId(Long storageLocationId, Pageable pageable) {
+        return stockmovementRepository.findByStorageLocationId(storageLocationId, pageable);
+    }
+
     @Transactional
     public StockMovement registerInbound(StockInboundRequestDTO dto) {
         validatePositiveQuantity(dto.quantity(), "Quantidade de entrada deve ser maior que zero.");

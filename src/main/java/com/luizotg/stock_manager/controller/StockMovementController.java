@@ -4,7 +4,6 @@ package com.luizotg.stock_manager.controller;
 import com.luizotg.stock_manager.dto.stockMovement.StockAdjustmentRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementDetailDTO;
-import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
 import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.service.StockMovementService;
@@ -17,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping({"/stock-movement", "/api/stock-movements"})
+@RequestMapping("/api/stock-movements")
 public class StockMovementController {
 
     private final StockMovementService stockMovementService;
@@ -30,8 +29,8 @@ public class StockMovementController {
     public ResponseEntity<StockMovementDetailDTO> createInboundMovement(@RequestBody @Valid StockInboundRequestDTO dto) {
         StockMovement stockMovement = stockMovementService.registerInbound(dto);
         var uri = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
+                .fromCurrentContextPath()
+                .path("/api/stock-movements/{id}")
                 .buildAndExpand(stockMovement.getId())
                 .toUri();
         return ResponseEntity.created(uri).body(new StockMovementDetailDTO(stockMovement));
@@ -41,8 +40,8 @@ public class StockMovementController {
     public ResponseEntity<StockMovementDetailDTO> createOutboundMovement(@RequestBody @Valid StockOutboundRequestDTO dto) {
         StockMovement stockMovement = stockMovementService.registerOutbound(dto);
         var uri = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
+                .fromCurrentContextPath()
+                .path("/api/stock-movements/{id}")
                 .buildAndExpand(stockMovement.getId())
                 .toUri();
         return ResponseEntity.created(uri).body(new StockMovementDetailDTO(stockMovement));
@@ -52,8 +51,8 @@ public class StockMovementController {
     public ResponseEntity<StockMovementDetailDTO> createAdjustmentMovement(@RequestBody @Valid StockAdjustmentRequestDTO dto) {
         StockMovement stockMovement = stockMovementService.registerAdjustment(dto);
         var uri = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
+                .fromCurrentContextPath()
+                .path("/api/stock-movements/{id}")
                 .buildAndExpand(stockMovement.getId())
                 .toUri();
         return ResponseEntity.created(uri).body(new StockMovementDetailDTO(stockMovement));
@@ -65,12 +64,6 @@ public class StockMovementController {
         return ResponseEntity.ok(new StockMovementDetailDTO(stockMovement));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteStockMovement(@PathVariable Long id) {
-        stockMovementService.deleteStockMovementById(id);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping
     public ResponseEntity<Page<StockMovementDetailDTO>> listAllStockMovement(@PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
         Page<StockMovement> stockMovements = stockMovementService.findAllStockMovements(pageable);
@@ -78,11 +71,21 @@ public class StockMovementController {
         return ResponseEntity.ok(dtoPage);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<StockMovementDetailDTO> updateStockMovement(@PathVariable Long id, @RequestBody @Valid StockMovementUpdateDTO stockMovementUpdateDTO) {
-        StockMovement stockMovement = stockMovementService.updateStockMovement(id,stockMovementUpdateDTO);
-        return ResponseEntity.ok(new StockMovementDetailDTO(stockMovement));
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<Page<StockMovementDetailDTO>> listStockMovementsByProduct(
+            @PathVariable Long productId,
+            @PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
+        Page<StockMovement> stockMovements = stockMovementService.findStockMovementsByProductId(productId, pageable);
+        Page<StockMovementDetailDTO> dtoPage = stockMovements.map(StockMovementDetailDTO::new);
+        return ResponseEntity.ok(dtoPage);
     }
 
-
+    @GetMapping("/location/{storageLocationId}")
+    public ResponseEntity<Page<StockMovementDetailDTO>> listStockMovementsByStorageLocation(
+            @PathVariable Long storageLocationId,
+            @PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
+        Page<StockMovement> stockMovements = stockMovementService.findStockMovementsByStorageLocationId(storageLocationId, pageable);
+        Page<StockMovementDetailDTO> dtoPage = stockMovements.map(StockMovementDetailDTO::new);
+        return ResponseEntity.ok(dtoPage);
+    }
 }
