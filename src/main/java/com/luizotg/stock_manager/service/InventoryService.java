@@ -22,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class InventoryService {
 
@@ -45,6 +47,19 @@ public class InventoryService {
         return inventoryRepository.findAll(pageable);
     }
 
+    public Inventory findInventoryByProductAndStorageLocation(Long productId, Long storageLocationId) {
+        return inventoryRepository.findByProductIdAndStorageLocationId(productId, storageLocationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventário não encontrado para este produto e local de armazenamento."));
+    }
+
+    public List<Inventory> findInventoriesByProductId(Long productId) {
+        return inventoryRepository.findByProductId(productId);
+    }
+
+    public List<Inventory> findInventoriesByStorageLocationId(Long storageLocationId) {
+        return inventoryRepository.findByStorageLocationId(storageLocationId);
+    }
+
     @Transactional
     public Inventory saveInventory(InventoryCreateDTO inventoryDTO) {
         if (inventoryDTO.quantity() < 0) {
@@ -56,7 +71,7 @@ public class InventoryService {
         StorageLocation storageLocation = storageLocationRepository.findById(inventoryDTO.storageLocationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local de armazenamento com ID " + inventoryDTO.storageLocationId() + " não encontrado."));
 
-        if (inventoryRepository.findByProductIdAndStorageLocationId(product.getId(), storageLocation.getId()).isPresent()) {
+        if (inventoryRepository.existsByProductIdAndStorageLocationId(product.getId(), storageLocation.getId())) {
             throw new DuplicateInventoryException("Inventário já existe para este produto e local de armazenamento.");
         }
 

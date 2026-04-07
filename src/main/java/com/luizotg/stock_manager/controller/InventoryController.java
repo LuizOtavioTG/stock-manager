@@ -15,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/inventory")
 public class InventoryController {
@@ -62,6 +64,38 @@ public class InventoryController {
         Page<InventoryDetailDTO> dtoPage = inventories.map(InventoryDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
     }
+
+    @GetMapping("/product/{productId}/location/{storageLocationId}")
+    public ResponseEntity<InventoryDetailDTO> detailInventoryByProductAndStorageLocation(
+            @PathVariable Long productId,
+            @PathVariable Long storageLocationId
+    ) {
+        Inventory inventory = inventoryService.findInventoryByProductAndStorageLocation(productId, storageLocationId);
+        return ResponseEntity.ok(new InventoryDetailDTO(inventory));
+    }
+
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<List<InventoryDetailDTO>> listInventoriesByProduct(
+            @PathVariable Long productId
+    ) {
+        List<InventoryDetailDTO> inventories = inventoryService.findInventoriesByProductId(productId)
+                .stream()
+                .map(InventoryDetailDTO::new)
+                .toList();
+        return ResponseEntity.ok(inventories);
+    }
+
+    @GetMapping("/location/{storageLocationId}")
+    public ResponseEntity<List<InventoryDetailDTO>> listInventoriesByStorageLocation(
+            @PathVariable Long storageLocationId
+    ) {
+        List<InventoryDetailDTO> inventories = inventoryService.findInventoriesByStorageLocationId(storageLocationId)
+                .stream()
+                .map(InventoryDetailDTO::new)
+                .toList();
+        return ResponseEntity.ok(inventories);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole(T(com.luizotg.stock_manager.security.Roles).ADMIN)")
     public ResponseEntity<Void> deleteInventory(

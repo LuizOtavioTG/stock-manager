@@ -40,6 +40,10 @@ public class StockMovementService {
         return stockmovementRepository.findByStorageLocationId(storageLocationId, pageable);
     }
 
+    public Page<StockMovement> findStockMovementsByMovementType(MovementType movementType, Pageable pageable) {
+        return stockmovementRepository.findByMovementType(movementType, pageable);
+    }
+
     @Transactional
     public StockMovement registerInbound(StockInboundRequestDTO dto) {
         validatePositiveQuantity(dto.quantity(), "Quantidade de entrada deve ser maior que zero.");

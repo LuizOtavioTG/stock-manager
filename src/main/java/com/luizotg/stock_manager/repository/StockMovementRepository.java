@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.repository;
 
+import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.StockMovement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,4 +11,6 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     Page<StockMovement> findByProductId(Long productId, Pageable pageable);
 
     Page<StockMovement> findByStorageLocationId(Long storageLocationId, Pageable pageable);
+
+    Page<StockMovement> findByMovementType(MovementType movementType, Pageable pageable);
 }

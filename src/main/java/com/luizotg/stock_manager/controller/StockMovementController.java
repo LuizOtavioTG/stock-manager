@@ -5,6 +5,7 @@ import com.luizotg.stock_manager.dto.stockMovement.StockAdjustmentRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementDetailDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
+import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.StockMovement;
 import com.luizotg.stock_manager.service.StockMovementService;
 import jakarta.validation.Valid;
@@ -85,6 +86,15 @@ public class StockMovementController {
             @PathVariable Long storageLocationId,
             @PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
         Page<StockMovement> stockMovements = stockMovementService.findStockMovementsByStorageLocationId(storageLocationId, pageable);
+        Page<StockMovementDetailDTO> dtoPage = stockMovements.map(StockMovementDetailDTO::new);
+        return ResponseEntity.ok(dtoPage);
+    }
+
+    @GetMapping("/type/{movementType}")
+    public ResponseEntity<Page<StockMovementDetailDTO>> listStockMovementsByType(
+            @PathVariable MovementType movementType,
+            @PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
+        Page<StockMovement> stockMovements = stockMovementService.findStockMovementsByMovementType(movementType, pageable);
         Page<StockMovementDetailDTO> dtoPage = stockMovements.map(StockMovementDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
     }
