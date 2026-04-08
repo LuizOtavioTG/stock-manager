@@ -75,7 +75,14 @@ public class InventoryService {
             throw new DuplicateInventoryException("Inventário já existe para este produto e local de armazenamento.");
         }
 
-        Inventory inventory = new Inventory(product, storageLocation, 0);
+        Inventory inventory = new Inventory(
+                product,
+                storageLocation,
+                0,
+                inventoryDTO.minimumStock(),
+                inventoryDTO.maximumStock(),
+                inventoryDTO.reorderPoint()
+        );
         Inventory saved = inventoryRepository.save(inventory);
 
         if (inventoryDTO.quantity() > 0) {
@@ -116,11 +123,18 @@ public class InventoryService {
     }
 
     public Inventory updateInventory(Long id, InventoryUpdateDTO dto) {
-        throw new BusinessException(
-                "Inventory não pode ser atualizado diretamente. Crie uma StockMovement para alterar o saldo.",
-                HttpStatus.METHOD_NOT_ALLOWED,
-                "INVENTORY_UPDATE_NOT_ALLOWED"
-        );
+        if (dto.quantity() != null || dto.productId() != null || dto.storageLocationId() != null) {
+            throw new BusinessException(
+                    "Inventory não pode ter produto, local ou saldo atualizado diretamente. Crie uma StockMovement para alterar o saldo.",
+                    HttpStatus.METHOD_NOT_ALLOWED,
+                    "INVENTORY_UPDATE_NOT_ALLOWED"
+            );
+        }
+
+        Inventory inventory = inventoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Estoque com ID " + id + " não encontrado."));
+        inventory.updateStockControls(dto.minimumStock(), dto.maximumStock(), dto.reorderPoint());
+        return inventoryRepository.save(inventory);
     }
 
     public Inventory applyStockMovement(Long productId, Long storageLocationId, Integer quantity, MovementType movementType) {
