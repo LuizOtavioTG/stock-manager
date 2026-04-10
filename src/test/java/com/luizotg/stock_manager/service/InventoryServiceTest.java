@@ -68,7 +68,7 @@ class InventoryServiceTest {
                 PRODUCT_ID,
                 STORAGE_LOCATION_ID,
                 10,
-                null,
+                0,
                 null,
                 null
         ))).isInstanceOf(DuplicateInventoryException.class);
@@ -120,6 +120,29 @@ class InventoryServiceTest {
 
         verify(inventoryRepository, never()).save(any());
         verify(stockMovementRepository, never()).save(any());
+    }
+
+    @Test
+    void saveInventoryUsesMinimumStockAsDefaultReorderPoint() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID))
+                .thenReturn(Optional.of(new StorageLocation(STORAGE_LOCATION_ID)));
+        when(inventoryRepository.existsByProductIdAndStorageLocationId(PRODUCT_ID, STORAGE_LOCATION_ID))
+                .thenReturn(false);
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Inventory inventory = inventoryService.saveInventory(new InventoryCreateDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                0,
+                20,
+                null,
+                null
+        ));
+
+        assertThat(inventory.getMinimumStock()).isEqualTo(20);
+        assertThat(inventory.getMaximumStock()).isNull();
+        assertThat(inventory.getReorderPoint()).isEqualTo(20);
     }
 
     @Test

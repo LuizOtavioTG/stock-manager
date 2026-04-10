@@ -2,8 +2,8 @@ package com.luizotg.stock_manager.dto.inventory;
 
 import com.luizotg.stock_manager.model.Inventory;
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
 public record InventoryCreateDTO(
 
@@ -14,18 +14,25 @@ public record InventoryCreateDTO(
         Long storageLocationId,
 
         @NotNull(message = "{inventory.quantity.notnull}")
-        @Min(value = 0, message = "{inventory.quantity.min}")
+        @PositiveOrZero(message = "{inventory.quantity.min}")
         Integer quantity,
 
-        @Min(value = 0, message = "{inventory.minimumStock.min}")
+        @NotNull(message = "{inventory.minimumStock.notnull}")
+        @PositiveOrZero(message = "{inventory.minimumStock.min}")
         Integer minimumStock,
 
-        @Min(value = 0, message = "{inventory.maximumStock.min}")
+        @PositiveOrZero(message = "{inventory.maximumStock.min}")
         Integer maximumStock,
 
-        @Min(value = 0, message = "{inventory.reorderPoint.min}")
+        @PositiveOrZero(message = "{inventory.reorderPoint.min}")
         Integer reorderPoint
 ) {
+        public InventoryCreateDTO {
+               if (reorderPoint == null) {
+                      reorderPoint = minimumStock;
+               }
+        }
+
         public InventoryCreateDTO(Inventory inventory) {
                this(
                        inventory.getProduct() != null ? inventory.getProduct().getId() : null,
