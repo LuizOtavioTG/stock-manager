@@ -123,9 +123,9 @@ public class InventoryService {
     }
 
     public Inventory updateInventory(Long id, InventoryUpdateDTO dto) {
-        if (dto.quantity() != null || dto.productId() != null || dto.storageLocationId() != null) {
+        if (dto.storageLocationId() != null) {
             throw new BusinessException(
-                    "Inventory não pode ter produto, local ou saldo atualizado diretamente. Crie uma StockMovement para alterar o saldo.",
+                    "Inventory não pode ter local atualizado diretamente.",
                     HttpStatus.METHOD_NOT_ALLOWED,
                     "INVENTORY_UPDATE_NOT_ALLOWED"
             );

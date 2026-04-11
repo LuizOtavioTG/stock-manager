@@ -1,27 +1,19 @@
 package com.luizotg.stock_manager.dto.inventory;
 
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 
 public record InventoryUpdateDTO(
 
-
-        Long productId,
-
-
         Long storageLocationId,
 
-
-        @Min(value = 0, message = "{inventory.quantity.min}")
-        Integer quantity,
-
-        @Min(value = 0, message = "{inventory.minimumStock.min}")
+        @PositiveOrZero(message = "{inventory.minimumStock.min}")
         Integer minimumStock,
 
-        @Min(value = 0, message = "{inventory.maximumStock.min}")
+        @PositiveOrZero(message = "{inventory.maximumStock.min}")
         Integer maximumStock,
 
-        @Min(value = 0, message = "{inventory.reorderPoint.min}")
+        @PositiveOrZero(message = "{inventory.reorderPoint.min}")
         Integer reorderPoint
 ) {
         @AssertTrue(message = "{inventory.stockControls.valid}")

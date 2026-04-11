@@ -153,8 +153,6 @@ class InventoryServiceTest {
 
         Inventory updated = inventoryService.updateInventory(1L, new InventoryUpdateDTO(
                 null,
-                null,
-                null,
                 10,
                 50,
                 20
@@ -164,5 +162,21 @@ class InventoryServiceTest {
         assertThat(updated.getMinimumStock()).isEqualTo(10);
         assertThat(updated.getMaximumStock()).isEqualTo(50);
         assertThat(updated.getReorderPoint()).isEqualTo(20);
+    }
+
+    @Test
+    void updateInventoryDoesNotChangeQuantity() {
+        Inventory inventory = new Inventory(new Product(PRODUCT_ID), new StorageLocation(STORAGE_LOCATION_ID), 10);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(inventory));
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Inventory updated = inventoryService.updateInventory(1L, new InventoryUpdateDTO(
+                null,
+                5,
+                50,
+                15
+        ));
+
+        assertThat(updated.getQuantity()).isEqualTo(10);
     }
 }
