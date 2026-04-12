@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.dto.inventory;
 
 import com.luizotg.stock_manager.model.Inventory;
+import com.luizotg.stock_manager.model.StockStatus;
 
 public record InventoryDetailDTO(
         Long id,
@@ -10,6 +11,7 @@ public record InventoryDetailDTO(
         Integer minimumStock,
         Integer maximumStock,
         Integer reorderPoint,
+        StockStatus stockStatus,
         Boolean outOfStock,
         Boolean belowMinimumStock,
         Boolean needsReorder,
@@ -27,6 +29,7 @@ public record InventoryDetailDTO(
                 inventory.getMinimumStock(),
                 inventory.getMaximumStock(),
                 inventory.getReorderPoint(),
+                inventory.getStockStatus(),
                 inventory.isOutOfStock(),
                 inventory.isBelowMinimumStock(),
                 inventory.needsReorder(),

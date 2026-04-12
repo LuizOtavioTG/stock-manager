@@ -102,6 +102,22 @@ public class Inventory {
         return quantity != null && maximumStock != null && quantity > maximumStock;
     }
 
+    public StockStatus getStockStatus() {
+        if (isOutOfStock()) {
+            return StockStatus.OUT_OF_STOCK;
+        }
+        if (isAboveMaximumStock()) {
+            return StockStatus.OVERSTOCK;
+        }
+        if (isBelowMinimumStock()) {
+            return StockStatus.LOW_STOCK;
+        }
+        if (needsReorder()) {
+            return StockStatus.REORDER_NEEDED;
+        }
+        return StockStatus.NORMAL;
+    }
+
     private void validateStockControls(Integer minimumStock, Integer maximumStock, Integer reorderPoint) {
         if (minimumStock != null && minimumStock < 0) {
             throw new InvalidStockMovementException("Estoque mínimo não pode ser negativo.");
