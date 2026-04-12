@@ -87,35 +87,59 @@ public class Inventory {
     }
 
     public boolean isOutOfStock() {
-        return quantity != null && quantity == 0;
+        return getStockStatus() == StockStatus.OUT_OF_STOCK;
     }
 
     public boolean isBelowMinimumStock() {
-        return quantity != null && minimumStock != null && quantity <= minimumStock;
+        return isLowStock();
+    }
+
+    public boolean isLowStock() {
+        StockStatus stockStatus = getStockStatus();
+        return stockStatus == StockStatus.OUT_OF_STOCK || stockStatus == StockStatus.LOW_STOCK;
     }
 
     public boolean needsReorder() {
-        return quantity != null && reorderPoint != null && quantity <= reorderPoint;
+        StockStatus stockStatus = getStockStatus();
+        return stockStatus == StockStatus.OUT_OF_STOCK
+                || stockStatus == StockStatus.LOW_STOCK
+                || stockStatus == StockStatus.REORDER_NEEDED;
     }
 
     public boolean isAboveMaximumStock() {
-        return quantity != null && maximumStock != null && quantity > maximumStock;
+        return getStockStatus() == StockStatus.OVERSTOCK;
     }
 
     public StockStatus getStockStatus() {
-        if (isOutOfStock()) {
+        if (quantity == null || quantity == 0) {
             return StockStatus.OUT_OF_STOCK;
         }
-        if (isAboveMaximumStock()) {
-            return StockStatus.OVERSTOCK;
-        }
-        if (isBelowMinimumStock()) {
+        if (minimumStock != null && quantity <= minimumStock) {
             return StockStatus.LOW_STOCK;
         }
-        if (needsReorder()) {
+        if (reorderPoint != null && quantity <= reorderPoint) {
             return StockStatus.REORDER_NEEDED;
         }
+        if (maximumStock != null && quantity > maximumStock) {
+            return StockStatus.OVERSTOCK;
+        }
         return StockStatus.NORMAL;
+    }
+
+    public Integer getSuggestedReorderQuantity() {
+        if (!needsReorder()) {
+            return 0;
+        }
+        if (maximumStock != null && maximumStock > quantity) {
+            return maximumStock - quantity;
+        }
+        if (reorderPoint != null && reorderPoint > quantity) {
+            return reorderPoint - quantity;
+        }
+        if (minimumStock != null && minimumStock > quantity) {
+            return minimumStock - quantity;
+        }
+        return 0;
     }
 
     private void validateStockControls(Integer minimumStock, Integer maximumStock, Integer reorderPoint) {

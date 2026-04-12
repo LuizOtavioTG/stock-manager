@@ -17,5 +17,8 @@ class InventoryDetailDTOTest {
         InventoryDetailDTO dto = new InventoryDetailDTO(inventory);
 
         assertThat(dto.stockStatus()).isEqualTo(StockStatus.REORDER_NEEDED);
+        assertThat(dto.suggestedReorderQuantity()).isEqualTo(85);
+        assertThat(dto.lowStock()).isFalse();
+        assertThat(dto.needsReorder()).isTrue();
     }
 }
