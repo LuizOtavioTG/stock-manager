@@ -102,12 +102,6 @@ class InventoryServiceTest {
 
     @Test
     void saveInventoryThrowsWhenStockControlFieldsAreInvalid() {
-        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
-        when(storageLocationRepository.findById(STORAGE_LOCATION_ID))
-                .thenReturn(Optional.of(new StorageLocation(STORAGE_LOCATION_ID)));
-        when(inventoryRepository.existsByProductIdAndStorageLocationId(PRODUCT_ID, STORAGE_LOCATION_ID))
-                .thenReturn(false);
-
         assertThatThrownBy(() -> inventoryService.saveInventory(new InventoryCreateDTO(
                 PRODUCT_ID,
                 STORAGE_LOCATION_ID,
@@ -117,6 +111,22 @@ class InventoryServiceTest {
                 10
         ))).isInstanceOf(InvalidStockMovementException.class)
                 .hasMessage("Ponto de reposição deve ser maior ou igual ao estoque mínimo.");
+
+        verify(inventoryRepository, never()).save(any());
+        verify(stockMovementRepository, never()).save(any());
+    }
+
+    @Test
+    void saveInventoryThrowsWhenMinimumStockIsNegative() {
+        assertThatThrownBy(() -> inventoryService.saveInventory(new InventoryCreateDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                0,
+                -1,
+                null,
+                null
+        ))).isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Estoque mínimo não pode ser negativo.");
 
         verify(inventoryRepository, never()).save(any());
         verify(stockMovementRepository, never()).save(any());
@@ -178,5 +188,18 @@ class InventoryServiceTest {
         ));
 
         assertThat(updated.getQuantity()).isEqualTo(10);
+    }
+
+    @Test
+    void updateInventoryThrowsWhenMaximumStockIsLowerThanReorderPoint() {
+        assertThatThrownBy(() -> inventoryService.updateInventory(1L, new InventoryUpdateDTO(
+                null,
+                10,
+                15,
+                20
+        ))).isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Estoque máximo deve ser maior ou igual ao ponto de reposição.");
+
+        verify(inventoryRepository, never()).save(any());
     }
 }

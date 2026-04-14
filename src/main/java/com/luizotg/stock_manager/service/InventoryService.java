@@ -65,6 +65,11 @@ public class InventoryService {
         if (inventoryDTO.quantity() < 0) {
             throw new InvalidStockMovementException("Quantidade inicial do inventário não pode ser negativa.");
         }
+        validateStockLimits(
+                inventoryDTO.minimumStock(),
+                inventoryDTO.reorderPoint(),
+                inventoryDTO.maximumStock()
+        );
 
         Product product = productRepository.findById(inventoryDTO.productId())
                 .orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + inventoryDTO.productId() + " não encontrado."));
@@ -130,6 +135,7 @@ public class InventoryService {
                     "INVENTORY_UPDATE_NOT_ALLOWED"
             );
         }
+        validateStockLimits(dto.minimumStock(), dto.reorderPoint(), dto.maximumStock());
 
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque com ID " + id + " não encontrado."));
@@ -193,6 +199,27 @@ public class InventoryService {
             Integer newQuantity,
             Integer difference
     ) {
+    }
+
+    private void validateStockLimits(Integer minimumStock, Integer reorderPoint, Integer maximumStock) {
+        if (minimumStock != null && minimumStock < 0) {
+            throw new InvalidStockMovementException("Estoque mínimo não pode ser negativo.");
+        }
+        if (reorderPoint != null && reorderPoint < 0) {
+            throw new InvalidStockMovementException("Ponto de reposição não pode ser negativo.");
+        }
+        if (maximumStock != null && maximumStock < 0) {
+            throw new InvalidStockMovementException("Estoque máximo não pode ser negativo.");
+        }
+        if (minimumStock != null && reorderPoint != null && reorderPoint < minimumStock) {
+            throw new InvalidStockMovementException("Ponto de reposição deve ser maior ou igual ao estoque mínimo.");
+        }
+        if (maximumStock != null && minimumStock != null && maximumStock < minimumStock) {
+            throw new InvalidStockMovementException("Estoque máximo deve ser maior ou igual ao estoque mínimo.");
+        }
+        if (maximumStock != null && reorderPoint != null && maximumStock < reorderPoint) {
+            throw new InvalidStockMovementException("Estoque máximo deve ser maior ou igual ao ponto de reposição.");
+        }
     }
 
 }
