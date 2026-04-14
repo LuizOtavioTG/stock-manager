@@ -128,18 +128,27 @@ public class InventoryService {
     }
 
     public Inventory updateInventory(Long id, InventoryUpdateDTO dto) {
-        if (dto.storageLocationId() != null) {
-            throw new BusinessException(
-                    "Inventory não pode ter local atualizado diretamente.",
-                    HttpStatus.METHOD_NOT_ALLOWED,
-                    "INVENTORY_UPDATE_NOT_ALLOWED"
-            );
-        }
         validateStockLimits(dto.minimumStock(), dto.reorderPoint(), dto.maximumStock());
 
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Estoque com ID " + id + " não encontrado."));
-        inventory.updateStockControls(dto.minimumStock(), dto.maximumStock(), dto.reorderPoint());
+
+        if (dto.storageLocationId() != null) {
+            StorageLocation storageLocation = storageLocationRepository.findById(dto.storageLocationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Local de armazenamento com ID " + dto.storageLocationId() + " não encontrado."));
+
+            Long productId = inventory.getProduct() != null ? inventory.getProduct().getId() : null;
+            Long currentStorageLocationId = inventory.getStorageLocation() != null
+                    ? inventory.getStorageLocation().getId()
+                    : null;
+            if (productId != null
+                    && !storageLocation.getId().equals(currentStorageLocationId)
+                    && inventoryRepository.existsByProductIdAndStorageLocationId(productId, storageLocation.getId())) {
+                throw new DuplicateInventoryException("Inventário já existe para este produto e local de armazenamento.");
+            }
+        }
+
+        inventory.updateFromDTO(dto);
         return inventoryRepository.save(inventory);
     }
 

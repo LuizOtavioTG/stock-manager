@@ -191,6 +191,48 @@ class InventoryServiceTest {
     }
 
     @Test
+    void updateInventoryUpdatesStorageLocationWithoutChangingQuantity() {
+        Long newStorageLocationId = 2L;
+        Inventory inventory = new Inventory(new Product(PRODUCT_ID), new StorageLocation(STORAGE_LOCATION_ID), 10);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(inventory));
+        when(storageLocationRepository.findById(newStorageLocationId))
+                .thenReturn(Optional.of(new StorageLocation(newStorageLocationId)));
+        when(inventoryRepository.existsByProductIdAndStorageLocationId(PRODUCT_ID, newStorageLocationId))
+                .thenReturn(false);
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Inventory updated = inventoryService.updateInventory(1L, new InventoryUpdateDTO(
+                newStorageLocationId,
+                5,
+                50,
+                15
+        ));
+
+        assertThat(updated.getStorageLocation().getId()).isEqualTo(newStorageLocationId);
+        assertThat(updated.getQuantity()).isEqualTo(10);
+    }
+
+    @Test
+    void updateInventoryThrowsWhenStorageLocationAlreadyHasInventoryForProduct() {
+        Long newStorageLocationId = 2L;
+        Inventory inventory = new Inventory(new Product(PRODUCT_ID), new StorageLocation(STORAGE_LOCATION_ID), 10);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(inventory));
+        when(storageLocationRepository.findById(newStorageLocationId))
+                .thenReturn(Optional.of(new StorageLocation(newStorageLocationId)));
+        when(inventoryRepository.existsByProductIdAndStorageLocationId(PRODUCT_ID, newStorageLocationId))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> inventoryService.updateInventory(1L, new InventoryUpdateDTO(
+                newStorageLocationId,
+                5,
+                50,
+                15
+        ))).isInstanceOf(DuplicateInventoryException.class);
+
+        verify(inventoryRepository, never()).save(any());
+    }
+
+    @Test
     void updateInventoryThrowsWhenMaximumStockIsLowerThanReorderPoint() {
         assertThatThrownBy(() -> inventoryService.updateInventory(1L, new InventoryUpdateDTO(
                 null,

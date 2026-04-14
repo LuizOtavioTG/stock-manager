@@ -1,10 +1,37 @@
 package com.luizotg.stock_manager.model;
 
+import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
+import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class InventoryTest {
+
+    @Test
+    void createsInventoryFromCreateDTOWithStockControlFields() {
+        Inventory inventory = new Inventory(new InventoryCreateDTO(1L, 2L, 10, 5, 100, null));
+
+        assertThat(inventory.getProduct().getId()).isEqualTo(1L);
+        assertThat(inventory.getStorageLocation().getId()).isEqualTo(2L);
+        assertThat(inventory.getQuantity()).isEqualTo(10);
+        assertThat(inventory.getMinimumStock()).isEqualTo(5);
+        assertThat(inventory.getMaximumStock()).isEqualTo(100);
+        assertThat(inventory.getReorderPoint()).isEqualTo(5);
+    }
+
+    @Test
+    void updatesInventoryFromUpdateDTOWithoutChangingQuantity() {
+        Inventory inventory = new Inventory(new Product(1L), new StorageLocation(2L), 10, 5, 100, 10);
+
+        inventory.updateFromDTO(new InventoryUpdateDTO(3L, 8, 120, 20));
+
+        assertThat(inventory.getStorageLocation().getId()).isEqualTo(3L);
+        assertThat(inventory.getQuantity()).isEqualTo(10);
+        assertThat(inventory.getMinimumStock()).isEqualTo(8);
+        assertThat(inventory.getMaximumStock()).isEqualTo(120);
+        assertThat(inventory.getReorderPoint()).isEqualTo(20);
+    }
 
     @Test
     void calculatesOutOfStockStatus() {

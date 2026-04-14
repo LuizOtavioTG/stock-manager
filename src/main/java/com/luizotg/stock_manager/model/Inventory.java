@@ -1,5 +1,7 @@
 package com.luizotg.stock_manager.model;
 
+import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
+import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
 import com.luizotg.stock_manager.exception.InsufficientStockException;
 import com.luizotg.stock_manager.exception.InvalidStockMovementException;
 import jakarta.persistence.*;
@@ -49,6 +51,17 @@ public class Inventory {
         adjustQuantity(quantity);
     }
 
+    public Inventory(InventoryCreateDTO inventoryDTO) {
+        this.product = new Product(inventoryDTO.productId());
+        this.storageLocation = new StorageLocation(inventoryDTO.storageLocationId());
+        adjustQuantity(inventoryDTO.quantity());
+        updateStockControls(
+                inventoryDTO.minimumStock(),
+                inventoryDTO.maximumStock(),
+                inventoryDTO.reorderPoint() != null ? inventoryDTO.reorderPoint() : inventoryDTO.minimumStock()
+        );
+    }
+
     public Inventory(
             Product product,
             StorageLocation storageLocation,
@@ -84,6 +97,13 @@ public class Inventory {
         this.minimumStock = minimumStock;
         this.maximumStock = maximumStock;
         this.reorderPoint = reorderPoint;
+    }
+
+    public void updateFromDTO(InventoryUpdateDTO dto) {
+        if (dto.storageLocationId() != null) {
+            this.storageLocation = new StorageLocation(dto.storageLocationId());
+        }
+        updateStockControls(dto.minimumStock(), dto.maximumStock(), dto.reorderPoint());
     }
 
     public boolean isOutOfStock() {
