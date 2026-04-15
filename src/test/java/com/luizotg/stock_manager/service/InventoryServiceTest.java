@@ -16,7 +16,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +59,26 @@ class InventoryServiceTest {
                 storageLocationRepository,
                 stockMovementRepository
         );
+    }
+
+    @Test
+    void findLowStockReturnsRepositoryPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Inventory lowStockInventory = new Inventory(
+                new Product(PRODUCT_ID),
+                new StorageLocation(STORAGE_LOCATION_ID),
+                5,
+                10,
+                100,
+                20
+        );
+        Page<Inventory> expectedPage = new PageImpl<>(List.of(lowStockInventory), pageable, 1);
+        when(inventoryRepository.findLowStock(pageable)).thenReturn(expectedPage);
+
+        Page<Inventory> result = inventoryService.findLowStock(pageable);
+
+        assertThat(result).isSameAs(expectedPage);
+        verify(inventoryRepository).findLowStock(pageable);
     }
 
     @Test

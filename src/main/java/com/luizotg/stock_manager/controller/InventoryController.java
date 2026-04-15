@@ -65,6 +65,16 @@ public class InventoryController {
         return ResponseEntity.ok(dtoPage);
     }
 
+    @GetMapping("/low-stock")
+    public ResponseEntity<Page<InventoryDetailDTO>> listLowStock(
+            @PageableDefault(size = 10, sort = {"id"}) Pageable pageable
+    ) {
+        Page<InventoryDetailDTO> result = inventoryService.findLowStock(pageable)
+                .map(InventoryDetailDTO::new);
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/product/{productId}/location/{storageLocationId}")
     public ResponseEntity<InventoryDetailDTO> detailInventoryByProductAndStorageLocation(
             @PathVariable Long productId,
