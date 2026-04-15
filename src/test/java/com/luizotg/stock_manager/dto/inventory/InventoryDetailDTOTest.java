@@ -16,9 +16,13 @@ class InventoryDetailDTOTest {
 
         InventoryDetailDTO dto = new InventoryDetailDTO(inventory);
 
+        assertThat(dto.productId()).isEqualTo(1L);
+        assertThat(dto.productName()).isNull();
+        assertThat(dto.storageLocationId()).isEqualTo(1L);
+        assertThat(dto.storageLocationName()).isNull();
         assertThat(dto.stockStatus()).isEqualTo(StockStatus.REORDER_NEEDED);
-        assertThat(dto.suggestedReorderQuantity()).isEqualTo(85);
         assertThat(dto.lowStock()).isFalse();
-        assertThat(dto.needsReorder()).isTrue();
+        assertThat(dto.reorderNeeded()).isTrue();
+        assertThat(dto.suggestedReorderQuantity()).isEqualTo(85);
     }
 }

@@ -6,38 +6,34 @@ import com.luizotg.stock_manager.model.StockStatus;
 public record InventoryDetailDTO(
         Long id,
         Long productId,
+        String productName,
         Long storageLocationId,
+        String storageLocationName,
         Integer quantity,
         Integer minimumStock,
         Integer maximumStock,
         Integer reorderPoint,
         StockStatus stockStatus,
-        Integer suggestedReorderQuantity,
-        Boolean outOfStock,
         Boolean lowStock,
-        Boolean needsReorder,
-        Boolean aboveMaximumStock,
-        String createdAt,
-        String updatedAt
+        Boolean reorderNeeded,
+        Integer suggestedReorderQuantity
 ) {
 
     public InventoryDetailDTO(Inventory inventory) {
         this(
                 inventory.getId(),
                 inventory.getProduct() != null ? inventory.getProduct().getId() : null,
+                inventory.getProduct() != null ? inventory.getProduct().getName() : null,
                 inventory.getStorageLocation() != null ? inventory.getStorageLocation().getId() : null,
+                inventory.getStorageLocation() != null ? inventory.getStorageLocation().getName() : null,
                 inventory.getQuantity(),
                 inventory.getMinimumStock(),
                 inventory.getMaximumStock(),
                 inventory.getReorderPoint(),
                 inventory.getStockStatus(),
-                inventory.getSuggestedReorderQuantity(),
-                inventory.isOutOfStock(),
                 inventory.isLowStock(),
                 inventory.needsReorder(),
-                inventory.isAboveMaximumStock(),
-                inventory.getCreatedAt() != null ? inventory.getCreatedAt().toString() : null,
-                inventory.getUpdatedAt() != null ? inventory.getUpdatedAt().toString() : null
+                inventory.getSuggestedReorderQuantity()
         );
     }
 }
