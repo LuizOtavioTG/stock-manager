@@ -25,4 +25,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             WHERE i.quantity <= i.minimumStock
             """)
     Page<Inventory> findLowStock(Pageable pageable);
+
+    @Query("""
+            SELECT i FROM Inventory i
+            WHERE i.quantity <= i.reorderPoint
+            """)
+    Page<Inventory> findReorderNeeded(Pageable pageable);
 }
