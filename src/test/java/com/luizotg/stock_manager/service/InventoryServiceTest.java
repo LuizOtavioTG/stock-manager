@@ -82,6 +82,26 @@ class InventoryServiceTest {
     }
 
     @Test
+    void findReorderNeededReturnsRepositoryPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Inventory reorderNeededInventory = new Inventory(
+                new Product(PRODUCT_ID),
+                new StorageLocation(STORAGE_LOCATION_ID),
+                15,
+                10,
+                100,
+                20
+        );
+        Page<Inventory> expectedPage = new PageImpl<>(List.of(reorderNeededInventory), pageable, 1);
+        when(inventoryRepository.findReorderNeeded(pageable)).thenReturn(expectedPage);
+
+        Page<Inventory> result = inventoryService.findReorderNeeded(pageable);
+
+        assertThat(result).isSameAs(expectedPage);
+        verify(inventoryRepository).findReorderNeeded(pageable);
+    }
+
+    @Test
     void saveInventoryThrowsWhenProductAndStorageLocationAlreadyHaveInventory() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
         when(storageLocationRepository.findById(STORAGE_LOCATION_ID))
