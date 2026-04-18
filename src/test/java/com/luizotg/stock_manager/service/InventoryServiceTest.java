@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.service;
 
+import com.luizotg.stock_manager.dto.inventory.InventoryAlertSummaryDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
 import com.luizotg.stock_manager.exception.DuplicateInventoryException;
@@ -139,6 +140,21 @@ class InventoryServiceTest {
 
         assertThat(result).isSameAs(expectedPage);
         verify(inventoryRepository).findOverstock(pageable);
+    }
+
+    @Test
+    void getInventoryAlertSummaryReturnsAlertCounts() {
+        when(inventoryRepository.countOutOfStock()).thenReturn(4L);
+        when(inventoryRepository.countLowStock()).thenReturn(12L);
+        when(inventoryRepository.countReorderNeeded()).thenReturn(20L);
+        when(inventoryRepository.countOverstock()).thenReturn(3L);
+
+        InventoryAlertSummaryDTO summary = inventoryService.getInventoryAlertSummary();
+
+        assertThat(summary.outOfStockCount()).isEqualTo(4L);
+        assertThat(summary.lowStockCount()).isEqualTo(12L);
+        assertThat(summary.reorderNeededCount()).isEqualTo(20L);
+        assertThat(summary.overstockCount()).isEqualTo(3L);
     }
 
     @Test

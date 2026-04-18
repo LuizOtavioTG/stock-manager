@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.controller;
 
+import com.luizotg.stock_manager.dto.inventory.InventoryAlertSummaryDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryDetailDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
@@ -103,6 +104,12 @@ public class InventoryController {
                 .map(InventoryDetailDTO::new);
 
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/alerts/summary")
+    public ResponseEntity<InventoryAlertSummaryDTO> getInventoryAlertSummary() {
+        InventoryAlertSummaryDTO summary = inventoryService.getInventoryAlertSummary();
+        return ResponseEntity.ok(summary);
     }
 
     @GetMapping("/product/{productId}/location/{storageLocationId}")

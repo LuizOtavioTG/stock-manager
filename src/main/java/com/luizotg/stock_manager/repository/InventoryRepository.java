@@ -27,10 +27,22 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Page<Inventory> findLowStock(Pageable pageable);
 
     @Query("""
+            SELECT COUNT(i) FROM Inventory i
+            WHERE i.quantity <= i.minimumStock
+            """)
+    long countLowStock();
+
+    @Query("""
             SELECT i FROM Inventory i
             WHERE i.quantity <= i.reorderPoint
             """)
     Page<Inventory> findReorderNeeded(Pageable pageable);
+
+    @Query("""
+            SELECT COUNT(i) FROM Inventory i
+            WHERE i.quantity <= i.reorderPoint
+            """)
+    long countReorderNeeded();
 
     @Query("""
             SELECT i FROM Inventory i
@@ -39,9 +51,22 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Page<Inventory> findOutOfStock(Pageable pageable);
 
     @Query("""
+            SELECT COUNT(i) FROM Inventory i
+            WHERE i.quantity = 0
+            """)
+    long countOutOfStock();
+
+    @Query("""
             SELECT i FROM Inventory i
             WHERE i.maximumStock IS NOT NULL
             AND i.quantity > i.maximumStock
             """)
     Page<Inventory> findOverstock(Pageable pageable);
+
+    @Query("""
+            SELECT COUNT(i) FROM Inventory i
+            WHERE i.maximumStock IS NOT NULL
+            AND i.quantity > i.maximumStock
+            """)
+    long countOverstock();
 }

@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.service;
 
+import com.luizotg.stock_manager.dto.inventory.InventoryAlertSummaryDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
@@ -61,6 +62,15 @@ public class InventoryService {
 
     public Page<Inventory> findOverstock(Pageable pageable) {
         return inventoryRepository.findOverstock(pageable);
+    }
+
+    public InventoryAlertSummaryDTO getInventoryAlertSummary() {
+        return new InventoryAlertSummaryDTO(
+                inventoryRepository.countOutOfStock(),
+                inventoryRepository.countLowStock(),
+                inventoryRepository.countReorderNeeded(),
+                inventoryRepository.countOverstock()
+        );
     }
 
     public Inventory findInventoryByProductAndStorageLocation(Long productId, Long storageLocationId) {
