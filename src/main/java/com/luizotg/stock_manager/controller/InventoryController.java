@@ -95,6 +95,16 @@ public class InventoryController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/overstock")
+    public ResponseEntity<Page<InventoryDetailDTO>> listOverstock(
+            @PageableDefault(size = 10, sort = {"id"}) Pageable pageable
+    ) {
+        Page<InventoryDetailDTO> result = inventoryService.findOverstock(pageable)
+                .map(InventoryDetailDTO::new);
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/product/{productId}/location/{storageLocationId}")
     public ResponseEntity<InventoryDetailDTO> detailInventoryByProductAndStorageLocation(
             @PathVariable Long productId,

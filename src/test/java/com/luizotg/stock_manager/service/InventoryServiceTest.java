@@ -122,6 +122,26 @@ class InventoryServiceTest {
     }
 
     @Test
+    void findOverstockReturnsRepositoryPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Inventory overstockInventory = new Inventory(
+                new Product(PRODUCT_ID),
+                new StorageLocation(STORAGE_LOCATION_ID),
+                120,
+                10,
+                100,
+                20
+        );
+        Page<Inventory> expectedPage = new PageImpl<>(List.of(overstockInventory), pageable, 1);
+        when(inventoryRepository.findOverstock(pageable)).thenReturn(expectedPage);
+
+        Page<Inventory> result = inventoryService.findOverstock(pageable);
+
+        assertThat(result).isSameAs(expectedPage);
+        verify(inventoryRepository).findOverstock(pageable);
+    }
+
+    @Test
     void saveInventoryThrowsWhenProductAndStorageLocationAlreadyHaveInventory() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
         when(storageLocationRepository.findById(STORAGE_LOCATION_ID))

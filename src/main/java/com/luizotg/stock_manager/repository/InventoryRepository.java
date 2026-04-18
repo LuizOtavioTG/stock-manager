@@ -37,4 +37,11 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             WHERE i.quantity = 0
             """)
     Page<Inventory> findOutOfStock(Pageable pageable);
+
+    @Query("""
+            SELECT i FROM Inventory i
+            WHERE i.maximumStock IS NOT NULL
+            AND i.quantity > i.maximumStock
+            """)
+    Page<Inventory> findOverstock(Pageable pageable);
 }
