@@ -55,6 +55,10 @@ public class InventoryService {
         return inventoryRepository.findReorderNeeded(pageable);
     }
 
+    public Page<Inventory> findOutOfStock(Pageable pageable) {
+        return inventoryRepository.findOutOfStock(pageable);
+    }
+
     public Inventory findInventoryByProductAndStorageLocation(Long productId, Long storageLocationId) {
         return inventoryRepository.findByProductIdAndStorageLocationId(productId, storageLocationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventário não encontrado para este produto e local de armazenamento."));

@@ -102,6 +102,26 @@ class InventoryServiceTest {
     }
 
     @Test
+    void findOutOfStockReturnsRepositoryPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Inventory outOfStockInventory = new Inventory(
+                new Product(PRODUCT_ID),
+                new StorageLocation(STORAGE_LOCATION_ID),
+                0,
+                10,
+                100,
+                20
+        );
+        Page<Inventory> expectedPage = new PageImpl<>(List.of(outOfStockInventory), pageable, 1);
+        when(inventoryRepository.findOutOfStock(pageable)).thenReturn(expectedPage);
+
+        Page<Inventory> result = inventoryService.findOutOfStock(pageable);
+
+        assertThat(result).isSameAs(expectedPage);
+        verify(inventoryRepository).findOutOfStock(pageable);
+    }
+
+    @Test
     void saveInventoryThrowsWhenProductAndStorageLocationAlreadyHaveInventory() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
         when(storageLocationRepository.findById(STORAGE_LOCATION_ID))

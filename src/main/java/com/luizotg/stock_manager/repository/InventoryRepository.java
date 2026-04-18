@@ -31,4 +31,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             WHERE i.quantity <= i.reorderPoint
             """)
     Page<Inventory> findReorderNeeded(Pageable pageable);
+
+    @Query("""
+            SELECT i FROM Inventory i
+            WHERE i.quantity = 0
+            """)
+    Page<Inventory> findOutOfStock(Pageable pageable);
 }

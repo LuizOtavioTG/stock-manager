@@ -85,6 +85,16 @@ public class InventoryController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/out-of-stock")
+    public ResponseEntity<Page<InventoryDetailDTO>> listOutOfStock(
+            @PageableDefault(size = 10, sort = {"id"}) Pageable pageable
+    ) {
+        Page<InventoryDetailDTO> result = inventoryService.findOutOfStock(pageable)
+                .map(InventoryDetailDTO::new);
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/product/{productId}/location/{storageLocationId}")
     public ResponseEntity<InventoryDetailDTO> detailInventoryByProductAndStorageLocation(
             @PathVariable Long productId,
