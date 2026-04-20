@@ -49,19 +49,59 @@ public class InventoryService {
     }
 
     public Page<Inventory> findLowStock(Pageable pageable) {
-        return inventoryRepository.findLowStock(pageable);
+        return findLowStock(null, null, null, null, pageable);
+    }
+
+    public Page<Inventory> findLowStock(
+            Long productId,
+            Long categoryId,
+            Long storageLocationId,
+            Long supplierId,
+            Pageable pageable
+    ) {
+        return inventoryRepository.findLowStock(productId, categoryId, storageLocationId, supplierId, pageable);
     }
 
     public Page<Inventory> findReorderNeeded(Pageable pageable) {
-        return inventoryRepository.findReorderNeeded(pageable);
+        return findReorderNeeded(null, null, null, null, pageable);
+    }
+
+    public Page<Inventory> findReorderNeeded(
+            Long productId,
+            Long categoryId,
+            Long storageLocationId,
+            Long supplierId,
+            Pageable pageable
+    ) {
+        return inventoryRepository.findReorderNeeded(productId, categoryId, storageLocationId, supplierId, pageable);
     }
 
     public Page<Inventory> findOutOfStock(Pageable pageable) {
-        return inventoryRepository.findOutOfStock(pageable);
+        return findOutOfStock(null, null, null, null, pageable);
+    }
+
+    public Page<Inventory> findOutOfStock(
+            Long productId,
+            Long categoryId,
+            Long storageLocationId,
+            Long supplierId,
+            Pageable pageable
+    ) {
+        return inventoryRepository.findOutOfStock(productId, categoryId, storageLocationId, supplierId, pageable);
     }
 
     public Page<Inventory> findOverstock(Pageable pageable) {
-        return inventoryRepository.findOverstock(pageable);
+        return findOverstock(null, null, null, null, pageable);
+    }
+
+    public Page<Inventory> findOverstock(
+            Long productId,
+            Long categoryId,
+            Long storageLocationId,
+            Long supplierId,
+            Pageable pageable
+    ) {
+        return inventoryRepository.findOverstock(productId, categoryId, storageLocationId, supplierId, pageable);
     }
 
     public InventoryAlertSummaryDTO getInventoryAlertSummary() {

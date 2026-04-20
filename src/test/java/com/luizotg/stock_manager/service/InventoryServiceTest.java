@@ -74,12 +74,38 @@ class InventoryServiceTest {
                 20
         );
         Page<Inventory> expectedPage = new PageImpl<>(List.of(lowStockInventory), pageable, 1);
-        when(inventoryRepository.findLowStock(pageable)).thenReturn(expectedPage);
+        when(inventoryRepository.findLowStock(null, null, null, null, pageable)).thenReturn(expectedPage);
 
         Page<Inventory> result = inventoryService.findLowStock(pageable);
 
         assertThat(result).isSameAs(expectedPage);
-        verify(inventoryRepository).findLowStock(pageable);
+        verify(inventoryRepository).findLowStock(null, null, null, null, pageable);
+    }
+
+    @Test
+    void findLowStockAppliesOptionalFilters() {
+        Long categoryId = 2L;
+        Long supplierId = 3L;
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Inventory> expectedPage = Page.empty(pageable);
+        when(inventoryRepository.findLowStock(
+                PRODUCT_ID,
+                categoryId,
+                STORAGE_LOCATION_ID,
+                supplierId,
+                pageable
+        )).thenReturn(expectedPage);
+
+        Page<Inventory> result = inventoryService.findLowStock(
+                PRODUCT_ID,
+                categoryId,
+                STORAGE_LOCATION_ID,
+                supplierId,
+                pageable
+        );
+
+        assertThat(result).isSameAs(expectedPage);
+        verify(inventoryRepository).findLowStock(PRODUCT_ID, categoryId, STORAGE_LOCATION_ID, supplierId, pageable);
     }
 
     @Test
@@ -94,12 +120,12 @@ class InventoryServiceTest {
                 20
         );
         Page<Inventory> expectedPage = new PageImpl<>(List.of(reorderNeededInventory), pageable, 1);
-        when(inventoryRepository.findReorderNeeded(pageable)).thenReturn(expectedPage);
+        when(inventoryRepository.findReorderNeeded(null, null, null, null, pageable)).thenReturn(expectedPage);
 
         Page<Inventory> result = inventoryService.findReorderNeeded(pageable);
 
         assertThat(result).isSameAs(expectedPage);
-        verify(inventoryRepository).findReorderNeeded(pageable);
+        verify(inventoryRepository).findReorderNeeded(null, null, null, null, pageable);
     }
 
     @Test
@@ -114,12 +140,12 @@ class InventoryServiceTest {
                 20
         );
         Page<Inventory> expectedPage = new PageImpl<>(List.of(outOfStockInventory), pageable, 1);
-        when(inventoryRepository.findOutOfStock(pageable)).thenReturn(expectedPage);
+        when(inventoryRepository.findOutOfStock(null, null, null, null, pageable)).thenReturn(expectedPage);
 
         Page<Inventory> result = inventoryService.findOutOfStock(pageable);
 
         assertThat(result).isSameAs(expectedPage);
-        verify(inventoryRepository).findOutOfStock(pageable);
+        verify(inventoryRepository).findOutOfStock(null, null, null, null, pageable);
     }
 
     @Test
@@ -134,12 +160,12 @@ class InventoryServiceTest {
                 20
         );
         Page<Inventory> expectedPage = new PageImpl<>(List.of(overstockInventory), pageable, 1);
-        when(inventoryRepository.findOverstock(pageable)).thenReturn(expectedPage);
+        when(inventoryRepository.findOverstock(null, null, null, null, pageable)).thenReturn(expectedPage);
 
         Page<Inventory> result = inventoryService.findOverstock(pageable);
 
         assertThat(result).isSameAs(expectedPage);
-        verify(inventoryRepository).findOverstock(pageable);
+        verify(inventoryRepository).findOverstock(null, null, null, null, pageable);
     }
 
     @Test

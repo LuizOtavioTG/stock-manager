@@ -68,9 +68,14 @@ public class InventoryController {
 
     @GetMapping("/low-stock")
     public ResponseEntity<Page<InventoryDetailDTO>> listLowStock(
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long storageLocationId,
+            @RequestParam(required = false) Long supplierId,
             @PageableDefault(size = 10, sort = {"id"}) Pageable pageable
     ) {
-        Page<InventoryDetailDTO> result = inventoryService.findLowStock(pageable)
+        Page<InventoryDetailDTO> result = inventoryService
+                .findLowStock(productId, categoryId, storageLocationId, supplierId, pageable)
                 .map(InventoryDetailDTO::new);
 
         return ResponseEntity.ok(result);
@@ -78,9 +83,14 @@ public class InventoryController {
 
     @GetMapping("/reorder-needed")
     public ResponseEntity<Page<InventoryDetailDTO>> listReorderNeeded(
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long storageLocationId,
+            @RequestParam(required = false) Long supplierId,
             @PageableDefault(size = 10, sort = {"id"}) Pageable pageable
     ) {
-        Page<InventoryDetailDTO> result = inventoryService.findReorderNeeded(pageable)
+        Page<InventoryDetailDTO> result = inventoryService
+                .findReorderNeeded(productId, categoryId, storageLocationId, supplierId, pageable)
                 .map(InventoryDetailDTO::new);
 
         return ResponseEntity.ok(result);
@@ -88,9 +98,14 @@ public class InventoryController {
 
     @GetMapping("/out-of-stock")
     public ResponseEntity<Page<InventoryDetailDTO>> listOutOfStock(
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long storageLocationId,
+            @RequestParam(required = false) Long supplierId,
             @PageableDefault(size = 10, sort = {"id"}) Pageable pageable
     ) {
-        Page<InventoryDetailDTO> result = inventoryService.findOutOfStock(pageable)
+        Page<InventoryDetailDTO> result = inventoryService
+                .findOutOfStock(productId, categoryId, storageLocationId, supplierId, pageable)
                 .map(InventoryDetailDTO::new);
 
         return ResponseEntity.ok(result);
@@ -98,9 +113,14 @@ public class InventoryController {
 
     @GetMapping("/overstock")
     public ResponseEntity<Page<InventoryDetailDTO>> listOverstock(
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long storageLocationId,
+            @RequestParam(required = false) Long supplierId,
             @PageableDefault(size = 10, sort = {"id"}) Pageable pageable
     ) {
-        Page<InventoryDetailDTO> result = inventoryService.findOverstock(pageable)
+        Page<InventoryDetailDTO> result = inventoryService
+                .findOverstock(productId, categoryId, storageLocationId, supplierId, pageable)
                 .map(InventoryDetailDTO::new);
 
         return ResponseEntity.ok(result);
