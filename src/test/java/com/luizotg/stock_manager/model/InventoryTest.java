@@ -2,9 +2,11 @@ package com.luizotg.stock_manager.model;
 
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
+import com.luizotg.stock_manager.exception.InvalidStockMovementException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class InventoryTest {
 
@@ -77,11 +79,15 @@ class InventoryTest {
 
     @Test
     void identifiesLowStockOnlyForOutOfStockAndLowStockStatuses() {
+        Inventory outOfStock = new Inventory(new Product(1L), new StorageLocation(1L), 0, 10, 100, 20);
         Inventory lowStock = new Inventory(new Product(1L), new StorageLocation(1L), 10, 10, 100, 20);
         Inventory reorderNeeded = new Inventory(new Product(1L), new StorageLocation(1L), 15, 10, 100, 20);
+        Inventory normal = new Inventory(new Product(1L), new StorageLocation(1L), 50, 10, 100, 20);
 
+        assertThat(outOfStock.isLowStock()).isTrue();
         assertThat(lowStock.isLowStock()).isTrue();
         assertThat(reorderNeeded.isLowStock()).isFalse();
+        assertThat(normal.isLowStock()).isFalse();
     }
 
     @Test
@@ -116,5 +122,47 @@ class InventoryTest {
         Inventory inventory = new Inventory(new Product(1L), new StorageLocation(1L), 50, 10, 100, 20);
 
         assertThat(inventory.getSuggestedReorderQuantity()).isZero();
+    }
+
+    @Test
+    void throwsWhenMinimumStockIsNegative() {
+        assertThatThrownBy(() -> new Inventory(new Product(1L), new StorageLocation(1L), 10, -1, 100, 20))
+                .isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Estoque mínimo não pode ser negativo.");
+    }
+
+    @Test
+    void throwsWhenMaximumStockIsNegative() {
+        assertThatThrownBy(() -> new Inventory(new Product(1L), new StorageLocation(1L), 10, 5, -1, 20))
+                .isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Estoque máximo não pode ser negativo.");
+    }
+
+    @Test
+    void throwsWhenReorderPointIsNegative() {
+        assertThatThrownBy(() -> new Inventory(new Product(1L), new StorageLocation(1L), 10, 5, 100, -1))
+                .isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Ponto de reposição não pode ser negativo.");
+    }
+
+    @Test
+    void throwsWhenMaximumStockIsLowerThanMinimumStock() {
+        assertThatThrownBy(() -> new Inventory(new Product(1L), new StorageLocation(1L), 10, 20, 10, null))
+                .isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Estoque máximo deve ser maior ou igual ao estoque mínimo.");
+    }
+
+    @Test
+    void throwsWhenReorderPointIsLowerThanMinimumStock() {
+        assertThatThrownBy(() -> new Inventory(new Product(1L), new StorageLocation(1L), 10, 10, 100, 5))
+                .isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Ponto de reposição deve ser maior ou igual ao estoque mínimo.");
+    }
+
+    @Test
+    void throwsWhenReorderPointIsGreaterThanMaximumStock() {
+        assertThatThrownBy(() -> new Inventory(new Product(1L), new StorageLocation(1L), 10, 10, 20, 30))
+                .isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Ponto de reposição deve ser menor ou igual ao estoque máximo.");
     }
 }
