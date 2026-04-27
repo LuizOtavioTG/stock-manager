@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.product.ProductCreateDTO;
 import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
+import com.luizotg.stock_manager.exception.BusinessException;
 import com.luizotg.stock_manager.exception.DuplicateResourceException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
@@ -30,6 +31,8 @@ public class ProductService {
     }
 
     public Product saveProduct(ProductCreateDTO dto) {
+        validateProductName(dto.name());
+
         if (productRepository.existsBySku(dto.sku())) {
             throw new DuplicateResourceException("SKU já está em uso.");
         }
@@ -54,11 +57,21 @@ public class ProductService {
 
     public Product updateProduct(Long id, ProductUpdateDTO dto) {
         Product product = findProductById(id);
+        if (dto.name() != null) {
+            validateProductName(dto.name());
+        }
+
         if (dto.sku() != null && productRepository.existsBySkuAndIdNot(dto.sku(), id)) {
             throw new DuplicateResourceException("SKU já está em uso.");
         }
 
         product.updateFromDTO(dto, categoryRepository, supplierRepository);
         return productRepository.save(product);
+    }
+
+    private void validateProductName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new BusinessException("Nome do produto não pode ser vazio.");
+        }
     }
 }

@@ -9,7 +9,7 @@ public record ProductUpdateDTO(
         @Size(max = 50, message = "SKU deve ter no máximo 50 caracteres.")
         String sku,
 
-        @Size(max = 100, message = "{product.name.size}")
+        @Size(max = 100, message = "Nome do produto deve ter no máximo 100 caracteres.")
         String name,
 
         @Size(max = 255, message = "{product.description.size}")

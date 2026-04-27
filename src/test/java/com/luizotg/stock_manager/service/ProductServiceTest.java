@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.product.ProductCreateDTO;
 import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
+import com.luizotg.stock_manager.exception.BusinessException;
 import com.luizotg.stock_manager.exception.DuplicateResourceException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.repository.CategoryRepository;
@@ -91,10 +92,34 @@ class ProductServiceTest {
         verify(productRepository).save(product);
     }
 
+    @Test
+    void saveProductThrowsWhenNameIsBlank() {
+        assertThatThrownBy(() -> productService.saveProduct(createDTO(SKU, " ")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Nome do produto não pode ser vazio.");
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    void updateProductThrowsWhenNameIsBlank() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
+
+        assertThatThrownBy(() -> productService.updateProduct(PRODUCT_ID, updateDTO(null, " ")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Nome do produto não pode ser vazio.");
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
     private ProductCreateDTO createDTO(String sku) {
+        return createDTO(sku, "Product");
+    }
+
+    private ProductCreateDTO createDTO(String sku, String name) {
         return new ProductCreateDTO(
                 sku,
-                "Product",
+                name,
                 null,
                 "Brand",
                 null,
@@ -107,9 +132,13 @@ class ProductServiceTest {
     }
 
     private ProductUpdateDTO updateDTO(String sku) {
+        return updateDTO(sku, null);
+    }
+
+    private ProductUpdateDTO updateDTO(String sku, String name) {
         return new ProductUpdateDTO(
                 sku,
-                null,
+                name,
                 null,
                 null,
                 null,
