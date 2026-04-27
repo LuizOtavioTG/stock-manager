@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.product.ProductCreateDTO;
 import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
+import com.luizotg.stock_manager.exception.DuplicateResourceException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.repository.CategoryRepository;
@@ -29,6 +30,10 @@ public class ProductService {
     }
 
     public Product saveProduct(ProductCreateDTO dto) {
+        if (productRepository.existsBySku(dto.sku())) {
+            throw new DuplicateResourceException("SKU já está em uso.");
+        }
+
         Product product = new Product(dto, categoryRepository, supplierRepository);
         return productRepository.save(product);
     }
@@ -49,6 +54,10 @@ public class ProductService {
 
     public Product updateProduct(Long id, ProductUpdateDTO dto) {
         Product product = findProductById(id);
+        if (dto.sku() != null && productRepository.existsBySkuAndIdNot(dto.sku(), id)) {
+            throw new DuplicateResourceException("SKU já está em uso.");
+        }
+
         product.updateFromDTO(dto, categoryRepository, supplierRepository);
         return productRepository.save(product);
     }

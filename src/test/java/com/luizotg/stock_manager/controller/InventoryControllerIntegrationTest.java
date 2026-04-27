@@ -115,9 +115,9 @@ class InventoryControllerIntegrationTest {
 
     private void insertProduct(Long id, String name) {
         jdbcTemplate.update("""
-                INSERT INTO product (id, name, category_id, active)
-                VALUES (?, ?, 1001, true)
-                """, id, name);
+                INSERT INTO product (id, sku, name, category_id, active)
+                VALUES (?, ?, ?, 1001, true)
+                """, id, "SKU-" + id, name);
     }
 
     private void insertInventory(

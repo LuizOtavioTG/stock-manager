@@ -2,10 +2,12 @@ package com.luizotg.stock_manager.dto.product;
 
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 
 public record ProductUpdateDTO(
+
+        @Size(max = 50, message = "SKU deve ter no máximo 50 caracteres.")
+        String sku,
 
         @Size(max = 100, message = "{product.name.size}")
         String name,

@@ -31,6 +31,7 @@ public class Product {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)@EqualsAndHashCode.Include
     private Long id;
+    @Column(nullable = false, unique = true, length = 50)
     private String sku;
     private String name;
     private String description;
@@ -70,6 +71,7 @@ public class Product {
     }
 
     public Product(ProductCreateDTO dto, CategoryRepository categoryRepository, SupplierRepository supplierRepository) {
+        this.sku = dto.sku();
         this.name = dto.name();
         this.description = dto.description();
         this.brand = dto.brand();
@@ -95,6 +97,7 @@ public class Product {
 
 
     public void updateFromDTO(ProductUpdateDTO dto, CategoryRepository categoryRepository, SupplierRepository supplierRepository) {
+        if (dto.sku() != null) setSku(dto.sku());
         if (dto.name() != null) setName(dto.name());
         if (dto.description() != null) setDescription(dto.description());
         if (dto.brand() != null) setBrand(dto.brand());
