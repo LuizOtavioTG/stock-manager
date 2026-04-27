@@ -10,75 +10,84 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiError> handleBusinessException(BusinessException exception, HttpServletRequest request) {
-        return buildResponse(exception.getStatus(), exception.getMessage(), request.getRequestURI(), null);
+    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(DuplicateResourceException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientStockException(InsufficientStockException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InactiveResourceException.class)
+    public ResponseEntity<ErrorResponse> handleInactiveResourceException(InactiveResourceException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidStockMovementException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStockMovementException(InvalidStockMovementException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ApiError> handleEntityNotFoundException(EntityNotFoundException exception, HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI(), null);
+    public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ApiError> handleResponseStatusException(ResponseStatusException exception, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException exception, HttpServletRequest request) {
         HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
-        return buildResponse(status, exception.getReason(), request.getRequestURI(), null);
+        return buildResponse(status, exception.getReason(), request.getRequestURI());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidationException(MethodArgumentNotValidException exception, HttpServletRequest request) {
-        List<FieldErrorDetail> fields = exception.getBindingResult()
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException exception, HttpServletRequest request) {
+        String message = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> new FieldErrorDetail(error.getField(), error.getDefaultMessage()))
-                .toList();
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining("; "));
 
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
-                "Requisição inválida.",
-                request.getRequestURI(),
-                fields
+                message.isBlank() ? "Requisição inválida." : message,
+                request.getRequestURI()
         );
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleUnexpectedException(Exception exception, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception exception, HttpServletRequest request) {
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Erro interno inesperado.",
-                request.getRequestURI(),
-                null
+                request.getRequestURI()
         );
     }
 
-    private ResponseEntity<ApiError> buildResponse(HttpStatus status, String message, String path, List<FieldErrorDetail> fields) {
-        ApiError error = new ApiError(
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, String path) {
+        ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 status.value(),
                 status.getReasonPhrase(),
                 message,
-                path,
-                fields
+                path
         );
         return ResponseEntity.status(status).body(error);
-    }
-
-    public record ApiError(
-            LocalDateTime timestamp,
-            Integer status,
-            String error,
-            String message,
-            String path,
-            List<FieldErrorDetail> fields
-    ) {
-    }
-
-    public record FieldErrorDetail(String field, String message) {
     }
 }
