@@ -32,8 +32,8 @@ public record ProductCreateDTO(
         @DecimalMin(value = "0.0", inclusive = true, message = "Preço de custo não pode ser negativo.")
         Double costPrice,
 
-        @NotNull(message = "{product.salePrice.notnull}")
-        @DecimalMin(value = "0.0", inclusive = true, message = "{product.salePrice.min}")
+        @NotNull(message = "Preço de venda é obrigatório.")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Preço de venda não pode ser negativo.")
         Double salePrice,
 
         @FutureOrPresent(message = "{product.expirationDate.futureOrPresent}")

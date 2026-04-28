@@ -26,7 +26,7 @@ public record ProductUpdateDTO(
         @DecimalMin(value = "0.0", inclusive = true, message = "Preço de custo não pode ser negativo.")
         Double costPrice,
 
-        @DecimalMin(value = "0.0", inclusive = true, message = "{product.salePrice.min}")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Preço de venda não pode ser negativo.")
         Double salePrice,
 
         Boolean active,

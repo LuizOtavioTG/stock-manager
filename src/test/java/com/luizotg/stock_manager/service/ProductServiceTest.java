@@ -132,6 +132,26 @@ class ProductServiceTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
+    @Test
+    void saveProductThrowsWhenSalePriceIsNegative() {
+        assertThatThrownBy(() -> productService.saveProduct(createDTO(SKU, "Product", 10.0, -1.0)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Preço de venda não pode ser negativo.");
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    void updateProductThrowsWhenSalePriceIsNegative() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
+
+        assertThatThrownBy(() -> productService.updateProduct(PRODUCT_ID, updateDTO(null, null, null, -1.0)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Preço de venda não pode ser negativo.");
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
     private ProductCreateDTO createDTO(String sku) {
         return createDTO(sku, "Product");
     }
