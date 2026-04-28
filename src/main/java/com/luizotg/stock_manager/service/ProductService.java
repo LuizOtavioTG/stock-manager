@@ -32,6 +32,7 @@ public class ProductService {
 
     public Product saveProduct(ProductCreateDTO dto) {
         validateProductName(dto.name());
+        validatePrices(dto.costPrice(), dto.salePrice());
 
         if (productRepository.existsBySku(dto.sku())) {
             throw new DuplicateResourceException("SKU já está em uso.");
@@ -60,6 +61,7 @@ public class ProductService {
         if (dto.name() != null) {
             validateProductName(dto.name());
         }
+        validatePrices(dto.costPrice(), dto.salePrice());
 
         if (dto.sku() != null && productRepository.existsBySkuAndIdNot(dto.sku(), id)) {
             throw new DuplicateResourceException("SKU já está em uso.");
@@ -72,6 +74,15 @@ public class ProductService {
     private void validateProductName(String name) {
         if (name == null || name.isBlank()) {
             throw new BusinessException("Nome do produto não pode ser vazio.");
+        }
+    }
+
+    private void validatePrices(Double costPrice, Double salePrice) {
+        if (costPrice != null && costPrice < 0) {
+            throw new BusinessException("Preço de custo não pode ser negativo.");
+        }
+        if (salePrice != null && salePrice < 0) {
+            throw new BusinessException("Preço de venda não pode ser negativo.");
         }
     }
 }

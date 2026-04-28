@@ -28,8 +28,8 @@ public record ProductCreateDTO(
         @Size(max = 20, message = "{product.unitOfMeasure.size}")
         String unitOfMeasure,
 
-        @NotNull(message = "{product.costPrice.notnull}")
-        @DecimalMin(value = "0.0", inclusive = true, message = "{product.costPrice.min}")
+        @NotNull(message = "Preço de custo é obrigatório.")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Preço de custo não pode ser negativo.")
         Double costPrice,
 
         @NotNull(message = "{product.salePrice.notnull}")

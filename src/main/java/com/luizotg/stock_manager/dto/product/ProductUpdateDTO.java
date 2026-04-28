@@ -23,7 +23,7 @@ public record ProductUpdateDTO(
         @Size(max = 20, message = "{product.unitOfMeasure.size}")
         String unitOfMeasure,
 
-        @DecimalMin(value = "0.0", inclusive = true, message = "{product.costPrice.min}")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Preço de custo não pode ser negativo.")
         Double costPrice,
 
         @DecimalMin(value = "0.0", inclusive = true, message = "{product.salePrice.min}")

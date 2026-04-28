@@ -112,11 +112,35 @@ class ProductServiceTest {
         verify(productRepository, never()).save(any(Product.class));
     }
 
+    @Test
+    void saveProductThrowsWhenCostPriceIsNegative() {
+        assertThatThrownBy(() -> productService.saveProduct(createDTO(SKU, "Product", -1.0, 15.0)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Preço de custo não pode ser negativo.");
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    void updateProductThrowsWhenCostPriceIsNegative() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
+
+        assertThatThrownBy(() -> productService.updateProduct(PRODUCT_ID, updateDTO(null, null, -1.0, null)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Preço de custo não pode ser negativo.");
+
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
     private ProductCreateDTO createDTO(String sku) {
         return createDTO(sku, "Product");
     }
 
     private ProductCreateDTO createDTO(String sku, String name) {
+        return createDTO(sku, name, 10.0, 15.0);
+    }
+
+    private ProductCreateDTO createDTO(String sku, String name, Double costPrice, Double salePrice) {
         return new ProductCreateDTO(
                 sku,
                 name,
@@ -124,8 +148,8 @@ class ProductServiceTest {
                 "Brand",
                 null,
                 "UN",
-                10.0,
-                15.0,
+                costPrice,
+                salePrice,
                 null,
                 null
         );
@@ -136,6 +160,10 @@ class ProductServiceTest {
     }
 
     private ProductUpdateDTO updateDTO(String sku, String name) {
+        return updateDTO(sku, name, null, null);
+    }
+
+    private ProductUpdateDTO updateDTO(String sku, String name, Double costPrice, Double salePrice) {
         return new ProductUpdateDTO(
                 sku,
                 name,
@@ -143,8 +171,8 @@ class ProductServiceTest {
                 null,
                 null,
                 null,
-                null,
-                null,
+                costPrice,
+                salePrice,
                 null,
                 null,
                 null
