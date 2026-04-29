@@ -46,7 +46,7 @@ public class StockMovementService {
 
     @Transactional
     public StockMovement registerInbound(StockInboundRequestDTO dto) {
-        validatePositiveQuantity(dto.quantity(), "Quantidade de entrada deve ser maior que zero.");
+        validateMovementQuantity(dto.quantity());
 
         inventoryService.applyStockMovement(
                 dto.productId(),
@@ -70,7 +70,7 @@ public class StockMovementService {
 
     @Transactional
     public StockMovement registerOutbound(StockOutboundRequestDTO dto) {
-        validatePositiveQuantity(dto.quantity(), "Quantidade de saída deve ser maior que zero.");
+        validateMovementQuantity(dto.quantity());
 
         inventoryService.applyOutboundStockMovement(
                 dto.productId(),
@@ -102,6 +102,8 @@ public class StockMovementService {
         );
 
         Integer movementQuantity = Math.abs(adjustment.difference());
+        validateMovementQuantity(movementQuantity);
+
         String balanceNotes = "Saldo anterior: " + adjustment.previousQuantity()
                 + ". Novo saldo: " + adjustment.newQuantity()
                 + ". Diferença: " + adjustment.difference() + ".";
@@ -123,12 +125,13 @@ public class StockMovementService {
     }
 
     private StockMovement saveMovement(StockMovementCreateDTO dto) {
+        validateMovementQuantity(dto.quantity());
         return stockmovementRepository.save(new StockMovement(dto));
     }
 
-    private void validatePositiveQuantity(Integer quantity, String message) {
+    private void validateMovementQuantity(Integer quantity) {
         if (quantity == null || quantity <= 0) {
-            throw new InvalidStockMovementException(message);
+            throw new InvalidStockMovementException("Quantidade movimentada deve ser maior que zero.");
         }
     }
 

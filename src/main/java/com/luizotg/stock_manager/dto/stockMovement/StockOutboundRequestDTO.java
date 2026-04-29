@@ -12,8 +12,8 @@ public record StockOutboundRequestDTO(
         @NotNull(message = "{stockMovement.storageLocationId.notnull}")
         Long storageLocationId,
 
-        @NotNull(message = "{stockMovement.quantity.notnull}")
-        @Positive(message = "{stockMovement.quantity.min}")
+        @NotNull(message = "Quantidade é obrigatória.")
+        @Positive(message = "Quantidade movimentada deve ser maior que zero.")
         Integer quantity,
 
         @Size(max = 255, message = "{stockMovement.reason.size}")

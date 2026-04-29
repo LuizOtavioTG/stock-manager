@@ -177,6 +177,78 @@ class StockMovementServiceTest {
         verify(stockMovementRepository, never()).save(any(StockMovement.class));
     }
 
+    @Test
+    void registerInboundRequiresQuantity() {
+        assertThatThrownBy(() -> stockMovementService.registerInbound(new StockInboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                null,
+                "Compra",
+                "NF-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Quantidade movimentada deve ser maior que zero.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerInboundRejectsZeroQuantity() {
+        assertThatThrownBy(() -> stockMovementService.registerInbound(new StockInboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                0,
+                "Compra",
+                "NF-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Quantidade movimentada deve ser maior que zero.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerOutboundRejectsNegativeQuantity() {
+        assertThatThrownBy(() -> stockMovementService.registerOutbound(new StockOutboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                -1,
+                "Venda",
+                "ORDER-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Quantidade movimentada deve ser maior que zero.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerAdjustmentRejectsMovementWithZeroQuantity() {
+        Inventory inventory = inventoryWithQuantity(10);
+        mockProductAndStorageLocation();
+        when(inventoryRepository.findByProductIdAndStorageLocationId(PRODUCT_ID, STORAGE_LOCATION_ID))
+                .thenReturn(Optional.of(inventory));
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertThatThrownBy(() -> stockMovementService.registerAdjustment(new StockAdjustmentRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                10,
+                "Contagem de estoque",
+                "Luiz",
+                null
+        ))).isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Quantidade movimentada deve ser maior que zero.");
+
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
     private void mockProductAndStorageLocation() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
         when(storageLocationRepository.findById(STORAGE_LOCATION_ID))

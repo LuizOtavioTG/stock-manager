@@ -13,8 +13,8 @@ public record StockMovementCreateDTO(
         @NotNull(message = "{stockMovement.storageLocationId.notnull}")
         Long storageLocationId,
 
-        @NotNull(message = "{stockMovement.quantity.notnull}")
-        @Min(value = 1, message = "{stockMovement.quantity.min}")
+        @NotNull(message = "Quantidade é obrigatória.")
+        @Positive(message = "Quantidade movimentada deve ser maior que zero.")
         Integer quantity,
 
         @NotNull(message = "{stockMovement.movementType.notnull}")

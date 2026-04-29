@@ -8,7 +8,7 @@ public record StockMovementUpdateDTO(
 
         Long productId,
         Long storageLocationId,
-        @Min(value = 1, message = "{stockMovement.quantity.min}")
+        @Positive(message = "Quantidade movimentada deve ser maior que zero.")
         Integer quantity,
 
         MovementType movementType,
