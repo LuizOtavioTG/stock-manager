@@ -79,8 +79,11 @@ public class Inventory {
     }
 
     public void decreaseQuantity(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new InvalidStockMovementException("Quantidade deve ser maior que zero.");
+        }
         if (this.quantity < quantity) {
-            throw new InsufficientStockException("Estoque insuficiente.");
+            throw new InsufficientStockException("Estoque insuficiente para realizar saída.");
         }
         this.quantity -= quantity;
     }

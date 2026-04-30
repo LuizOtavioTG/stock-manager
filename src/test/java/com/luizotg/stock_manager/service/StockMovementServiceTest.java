@@ -130,7 +130,8 @@ class StockMovementServiceTest {
                 "ORDER-001",
                 "Luiz",
                 null
-        ))).isInstanceOf(InsufficientStockException.class);
+        ))).isInstanceOf(InsufficientStockException.class)
+                .hasMessage("Estoque insuficiente para realizar saída.");
 
         assertThat(inventory.getQuantity()).isEqualTo(3);
         verify(inventoryRepository, never()).save(any(Inventory.class));

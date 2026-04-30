@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.model;
 
 import com.luizotg.stock_manager.dto.inventory.InventoryCreateDTO;
 import com.luizotg.stock_manager.dto.inventory.InventoryUpdateDTO;
+import com.luizotg.stock_manager.exception.InsufficientStockException;
 import com.luizotg.stock_manager.exception.InvalidStockMovementException;
 import org.junit.jupiter.api.Test;
 
@@ -164,5 +165,27 @@ class InventoryTest {
         assertThatThrownBy(() -> new Inventory(new Product(1L), new StorageLocation(1L), 10, 10, 20, 30))
                 .isInstanceOf(InvalidStockMovementException.class)
                 .hasMessage("Ponto de reposição deve ser menor ou igual ao estoque máximo.");
+    }
+
+    @Test
+    void decreaseQuantityRejectsInvalidQuantity() {
+        Inventory inventory = new Inventory(new Product(1L), new StorageLocation(1L), 10);
+
+        assertThatThrownBy(() -> inventory.decreaseQuantity(0))
+                .isInstanceOf(InvalidStockMovementException.class)
+                .hasMessage("Quantidade deve ser maior que zero.");
+
+        assertThat(inventory.getQuantity()).isEqualTo(10);
+    }
+
+    @Test
+    void decreaseQuantityRejectsInsufficientStock() {
+        Inventory inventory = new Inventory(new Product(1L), new StorageLocation(1L), 10);
+
+        assertThatThrownBy(() -> inventory.decreaseQuantity(11))
+                .isInstanceOf(InsufficientStockException.class)
+                .hasMessage("Estoque insuficiente para realizar saída.");
+
+        assertThat(inventory.getQuantity()).isEqualTo(10);
     }
 }
