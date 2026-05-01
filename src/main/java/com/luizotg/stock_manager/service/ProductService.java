@@ -4,14 +4,19 @@ import com.luizotg.stock_manager.dto.product.ProductCreateDTO;
 import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
 import com.luizotg.stock_manager.exception.BusinessException;
 import com.luizotg.stock_manager.exception.DuplicateResourceException;
+import com.luizotg.stock_manager.exception.InactiveResourceException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
+import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.CategoryRepository;
 import com.luizotg.stock_manager.repository.ProductRepository;
 import com.luizotg.stock_manager.repository.SupplierRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class ProductService {
@@ -33,6 +38,7 @@ public class ProductService {
     public Product saveProduct(ProductCreateDTO dto) {
         validateProductName(dto.name());
         validatePrices(dto.costPrice(), dto.salePrice());
+        validateActiveSuppliers(dto.supplierIds());
 
         if (productRepository.existsBySku(dto.sku())) {
             throw new DuplicateResourceException("SKU já está em uso.");
@@ -62,6 +68,7 @@ public class ProductService {
             validateProductName(dto.name());
         }
         validatePrices(dto.costPrice(), dto.salePrice());
+        validateActiveSuppliers(dto.supplierIds());
 
         if (dto.sku() != null && productRepository.existsBySkuAndIdNot(dto.sku(), id)) {
             throw new DuplicateResourceException("SKU já está em uso.");
@@ -74,6 +81,20 @@ public class ProductService {
     private void validateProductName(String name) {
         if (name == null || name.isBlank()) {
             throw new BusinessException("Nome do produto não pode ser vazio.");
+        }
+    }
+
+    private void validateActiveSuppliers(Set<Long> supplierIds) {
+        if (supplierIds == null || supplierIds.isEmpty()) {
+            return;
+        }
+
+        Set<Supplier> suppliers = new HashSet<>(supplierRepository.findAllById(supplierIds));
+        boolean hasInactiveSupplier = suppliers.stream()
+                .anyMatch(supplier -> Boolean.FALSE.equals(supplier.getActive()));
+
+        if (hasInactiveSupplier) {
+            throw new InactiveResourceException("Fornecedor inativo não pode ser associado a um novo produto.");
         }
     }
 
