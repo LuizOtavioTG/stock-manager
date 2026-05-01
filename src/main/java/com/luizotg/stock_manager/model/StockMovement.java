@@ -59,10 +59,11 @@ public class StockMovement {
                 dto.reason(), dto.movementDate(), dto.reference(), dto.responsible(), dto.notes());
     }
 
-    public StockMovement(StockMovementCreateDTO dto, Product product) {
+    public StockMovement(StockMovementCreateDTO dto, Product product, StorageLocation storageLocation) {
         applyDto(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType(),
                 dto.reason(), dto.movementDate(), dto.reference(), dto.responsible(), dto.notes());
         this.product = product;
+        this.storageLocation = storageLocation;
     }
 
     private void applyDto(Long productId, Long storageLocationId, Integer quantity, MovementType movementType,

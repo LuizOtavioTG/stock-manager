@@ -12,7 +12,9 @@ import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.StockMovement;
+import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.repository.ProductRepository;
+import com.luizotg.stock_manager.repository.StorageLocationRepository;
 import com.luizotg.stock_manager.repository.StockMovementRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -26,15 +28,18 @@ public class StockMovementService {
     private final StockMovementRepository stockmovementRepository;
     private final InventoryService inventoryService;
     private final ProductRepository productRepository;
+    private final StorageLocationRepository storageLocationRepository;
 
     public StockMovementService(
             StockMovementRepository stockmovementRepository,
             InventoryService inventoryService,
-            ProductRepository productRepository
+            ProductRepository productRepository,
+            StorageLocationRepository storageLocationRepository
     ) {
         this.stockmovementRepository = stockmovementRepository;
         this.inventoryService = inventoryService;
         this.productRepository = productRepository;
+        this.storageLocationRepository = storageLocationRepository;
     }
 
     public Page<StockMovement> findAllStockMovements(Pageable pageable) {
@@ -57,6 +62,7 @@ public class StockMovementService {
     public StockMovement registerInbound(StockInboundRequestDTO dto) {
         validateMovementQuantity(dto.quantity());
         Product product = validateActiveProduct(dto.productId());
+        StorageLocation storageLocation = validateActiveStorageLocation(dto.storageLocationId());
 
         inventoryService.applyStockMovement(
                 dto.productId(),
@@ -75,13 +81,14 @@ public class StockMovementService {
                 dto.reference(),
                 dto.responsible(),
                 dto.notes()
-        ), product);
+        ), product, storageLocation);
     }
 
     @Transactional
     public StockMovement registerOutbound(StockOutboundRequestDTO dto) {
         validateMovementQuantity(dto.quantity());
         Product product = validateActiveProduct(dto.productId());
+        StorageLocation storageLocation = validateActiveStorageLocation(dto.storageLocationId());
 
         inventoryService.applyOutboundStockMovement(
                 dto.productId(),
@@ -99,13 +106,14 @@ public class StockMovementService {
                 dto.reference(),
                 dto.responsible(),
                 dto.notes()
-        ), product);
+        ), product, storageLocation);
     }
 
     @Transactional
     public StockMovement registerAdjustment(StockAdjustmentRequestDTO dto) {
         validateAdjustment(dto);
         Product product = validateActiveProduct(dto.productId());
+        StorageLocation storageLocation = validateActiveStorageLocation(dto.storageLocationId());
 
         InventoryService.StockAdjustmentResult adjustment = inventoryService.applyAdjustment(
                 dto.productId(),
@@ -133,12 +141,12 @@ public class StockMovementService {
                 null,
                 dto.responsible(),
                 notes
-        ), product);
+        ), product, storageLocation);
     }
 
-    private StockMovement saveMovement(StockMovementCreateDTO dto, Product product) {
+    private StockMovement saveMovement(StockMovementCreateDTO dto, Product product, StorageLocation storageLocation) {
         validateMovementQuantity(dto.quantity());
-        return stockmovementRepository.save(new StockMovement(dto, product));
+        return stockmovementRepository.save(new StockMovement(dto, product, storageLocation));
     }
 
     private Product validateActiveProduct(Long productId) {
@@ -150,6 +158,17 @@ public class StockMovementService {
         }
 
         return product;
+    }
+
+    private StorageLocation validateActiveStorageLocation(Long storageLocationId) {
+        StorageLocation storageLocation = storageLocationRepository.findById(storageLocationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Local de armazenamento não encontrado."));
+
+        if (Boolean.FALSE.equals(storageLocation.getActive())) {
+            throw new InactiveResourceException("Local de armazenamento inativo não pode receber movimentação.");
+        }
+
+        return storageLocation;
     }
 
     private void validateMovementQuantity(Integer quantity) {

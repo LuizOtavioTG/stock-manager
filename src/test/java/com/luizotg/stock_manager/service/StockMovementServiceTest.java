@@ -60,7 +60,12 @@ class StockMovementServiceTest {
                 storageLocationRepository,
                 stockMovementRepository
         );
-        stockMovementService = new StockMovementService(stockMovementRepository, inventoryService, productRepository);
+        stockMovementService = new StockMovementService(
+                stockMovementRepository,
+                inventoryService,
+                productRepository,
+                storageLocationRepository
+        );
     }
 
     @Test
@@ -89,6 +94,7 @@ class StockMovementServiceTest {
         assertThat(movement.getProduct().getId()).isEqualTo(PRODUCT_ID);
         assertThat(movement.getProduct().getActive()).isTrue();
         assertThat(movement.getStorageLocation().getId()).isEqualTo(STORAGE_LOCATION_ID);
+        assertThat(movement.getStorageLocation().getActive()).isTrue();
     }
 
     @Test
@@ -309,10 +315,69 @@ class StockMovementServiceTest {
         verify(stockMovementRepository, never()).save(any(StockMovement.class));
     }
 
+    @Test
+    void registerInboundThrowsWhenStorageLocationDoesNotExist() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(true)));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> stockMovementService.registerInbound(new StockInboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                5,
+                "Compra",
+                "NF-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Local de armazenamento não encontrado.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerOutboundRejectsInactiveStorageLocationBeforeChangingInventory() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(true)));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation(false)));
+
+        assertThatThrownBy(() -> stockMovementService.registerOutbound(new StockOutboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                4,
+                "Venda",
+                "ORDER-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(InactiveResourceException.class)
+                .hasMessage("Local de armazenamento inativo não pode receber movimentação.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerAdjustmentRejectsInactiveStorageLocationBeforeChangingInventory() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(true)));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation(false)));
+
+        assertThatThrownBy(() -> stockMovementService.registerAdjustment(new StockAdjustmentRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                7,
+                "Contagem de estoque",
+                "Luiz",
+                null
+        ))).isInstanceOf(InactiveResourceException.class)
+                .hasMessage("Local de armazenamento inativo não pode receber movimentação.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
     private void mockProductAndStorageLocation() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(true)));
         when(storageLocationRepository.findById(STORAGE_LOCATION_ID))
-                .thenReturn(Optional.of(new StorageLocation(STORAGE_LOCATION_ID)));
+                .thenReturn(Optional.of(storageLocation(true)));
     }
 
     private Inventory inventoryWithQuantity(Integer quantity) {
@@ -338,6 +403,27 @@ class StockMovementServiceTest {
                 15.0,
                 active,
                 null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private StorageLocation storageLocation(Boolean active) {
+        return new StorageLocation(
+                STORAGE_LOCATION_ID,
+                "Main warehouse",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                active,
                 null,
                 null,
                 null,
