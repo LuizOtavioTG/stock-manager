@@ -6,10 +6,13 @@ import com.luizotg.stock_manager.dto.stockMovement.StockMovementCreateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockMovementUpdateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
 import com.luizotg.stock_manager.exception.BusinessException;
+import com.luizotg.stock_manager.exception.InactiveResourceException;
 import com.luizotg.stock_manager.exception.InvalidStockMovementException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.MovementType;
+import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.StockMovement;
+import com.luizotg.stock_manager.repository.ProductRepository;
 import com.luizotg.stock_manager.repository.StockMovementRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -22,10 +25,16 @@ public class StockMovementService {
 
     private final StockMovementRepository stockmovementRepository;
     private final InventoryService inventoryService;
+    private final ProductRepository productRepository;
 
-    public StockMovementService(StockMovementRepository stockmovementRepository, InventoryService inventoryService) {
+    public StockMovementService(
+            StockMovementRepository stockmovementRepository,
+            InventoryService inventoryService,
+            ProductRepository productRepository
+    ) {
         this.stockmovementRepository = stockmovementRepository;
         this.inventoryService = inventoryService;
+        this.productRepository = productRepository;
     }
 
     public Page<StockMovement> findAllStockMovements(Pageable pageable) {
@@ -47,6 +56,7 @@ public class StockMovementService {
     @Transactional
     public StockMovement registerInbound(StockInboundRequestDTO dto) {
         validateMovementQuantity(dto.quantity());
+        Product product = validateActiveProduct(dto.productId());
 
         inventoryService.applyStockMovement(
                 dto.productId(),
@@ -65,12 +75,13 @@ public class StockMovementService {
                 dto.reference(),
                 dto.responsible(),
                 dto.notes()
-        ));
+        ), product);
     }
 
     @Transactional
     public StockMovement registerOutbound(StockOutboundRequestDTO dto) {
         validateMovementQuantity(dto.quantity());
+        Product product = validateActiveProduct(dto.productId());
 
         inventoryService.applyOutboundStockMovement(
                 dto.productId(),
@@ -88,12 +99,13 @@ public class StockMovementService {
                 dto.reference(),
                 dto.responsible(),
                 dto.notes()
-        ));
+        ), product);
     }
 
     @Transactional
     public StockMovement registerAdjustment(StockAdjustmentRequestDTO dto) {
         validateAdjustment(dto);
+        Product product = validateActiveProduct(dto.productId());
 
         InventoryService.StockAdjustmentResult adjustment = inventoryService.applyAdjustment(
                 dto.productId(),
@@ -121,12 +133,23 @@ public class StockMovementService {
                 null,
                 dto.responsible(),
                 notes
-        ));
+        ), product);
     }
 
-    private StockMovement saveMovement(StockMovementCreateDTO dto) {
+    private StockMovement saveMovement(StockMovementCreateDTO dto, Product product) {
         validateMovementQuantity(dto.quantity());
-        return stockmovementRepository.save(new StockMovement(dto));
+        return stockmovementRepository.save(new StockMovement(dto, product));
+    }
+
+    private Product validateActiveProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
+
+        if (Boolean.FALSE.equals(product.getActive())) {
+            throw new InactiveResourceException("Produto inativo não pode receber movimentação de estoque.");
+        }
+
+        return product;
     }
 
     private void validateMovementQuantity(Integer quantity) {

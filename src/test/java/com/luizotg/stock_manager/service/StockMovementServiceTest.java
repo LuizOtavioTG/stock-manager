@@ -3,8 +3,10 @@ package com.luizotg.stock_manager.service;
 import com.luizotg.stock_manager.dto.stockMovement.StockAdjustmentRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
+import com.luizotg.stock_manager.exception.InactiveResourceException;
 import com.luizotg.stock_manager.exception.InsufficientStockException;
 import com.luizotg.stock_manager.exception.InvalidStockMovementException;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Inventory;
 import com.luizotg.stock_manager.model.MovementType;
 import com.luizotg.stock_manager.model.Product;
@@ -58,7 +60,7 @@ class StockMovementServiceTest {
                 storageLocationRepository,
                 stockMovementRepository
         );
-        stockMovementService = new StockMovementService(stockMovementRepository, inventoryService);
+        stockMovementService = new StockMovementService(stockMovementRepository, inventoryService, productRepository);
     }
 
     @Test
@@ -85,6 +87,7 @@ class StockMovementServiceTest {
         assertThat(movement.getMovementType()).isEqualTo(MovementType.INBOUND);
         assertThat(movement.getQuantity()).isEqualTo(5);
         assertThat(movement.getProduct().getId()).isEqualTo(PRODUCT_ID);
+        assertThat(movement.getProduct().getActive()).isTrue();
         assertThat(movement.getStorageLocation().getId()).isEqualTo(STORAGE_LOCATION_ID);
     }
 
@@ -250,8 +253,64 @@ class StockMovementServiceTest {
         verify(stockMovementRepository, never()).save(any(StockMovement.class));
     }
 
+    @Test
+    void registerInboundRejectsInactiveProduct() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(false)));
+
+        assertThatThrownBy(() -> stockMovementService.registerInbound(new StockInboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                5,
+                "Compra",
+                "NF-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(InactiveResourceException.class)
+                .hasMessage("Produto inativo não pode receber movimentação de estoque.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerAdjustmentRejectsInactiveProductBeforeChangingInventory() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(false)));
+
+        assertThatThrownBy(() -> stockMovementService.registerAdjustment(new StockAdjustmentRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                7,
+                "Contagem de estoque",
+                "Luiz",
+                null
+        ))).isInstanceOf(InactiveResourceException.class)
+                .hasMessage("Produto inativo não pode receber movimentação de estoque.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerInboundThrowsWhenProductDoesNotExist() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> stockMovementService.registerInbound(new StockInboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                5,
+                "Compra",
+                "NF-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Produto não encontrado.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
     private void mockProductAndStorageLocation() {
-        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(new Product(PRODUCT_ID)));
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(true)));
         when(storageLocationRepository.findById(STORAGE_LOCATION_ID))
                 .thenReturn(Optional.of(new StorageLocation(STORAGE_LOCATION_ID)));
     }
@@ -264,5 +323,26 @@ class StockMovementServiceTest {
         ArgumentCaptor<StockMovement> captor = ArgumentCaptor.forClass(StockMovement.class);
         verify(stockMovementRepository).save(captor.capture());
         return captor.getValue();
+    }
+
+    private Product product(Boolean active) {
+        return new Product(
+                PRODUCT_ID,
+                "SKU-001",
+                "Product",
+                null,
+                "Brand",
+                null,
+                "UN",
+                10.0,
+                15.0,
+                active,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 }
