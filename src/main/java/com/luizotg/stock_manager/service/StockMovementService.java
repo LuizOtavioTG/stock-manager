@@ -60,18 +60,7 @@ public class StockMovementService {
 
     @Transactional
     public StockMovement registerInbound(StockInboundRequestDTO dto) {
-        validateMovementQuantity(dto.quantity());
-        Product product = validateActiveProduct(dto.productId());
-        StorageLocation storageLocation = validateActiveStorageLocation(dto.storageLocationId());
-
-        inventoryService.applyStockMovement(
-                dto.productId(),
-                dto.storageLocationId(),
-                dto.quantity(),
-                MovementType.INBOUND
-        );
-
-        return saveMovement(new StockMovementCreateDTO(
+        StockMovementCreateDTO movementDTO = new StockMovementCreateDTO(
                 dto.productId(),
                 dto.storageLocationId(),
                 dto.quantity(),
@@ -81,22 +70,22 @@ public class StockMovementService {
                 dto.reference(),
                 dto.responsible(),
                 dto.notes()
-        ), product, storageLocation);
+        );
+        MovementValidationContext context = validateMovementBaseData(movementDTO);
+
+        inventoryService.applyStockMovement(
+                dto.productId(),
+                dto.storageLocationId(),
+                dto.quantity(),
+                MovementType.INBOUND
+        );
+
+        return saveMovement(movementDTO, context);
     }
 
     @Transactional
     public StockMovement registerOutbound(StockOutboundRequestDTO dto) {
-        validateMovementQuantity(dto.quantity());
-        Product product = validateActiveProduct(dto.productId());
-        StorageLocation storageLocation = validateActiveStorageLocation(dto.storageLocationId());
-
-        inventoryService.applyOutboundStockMovement(
-                dto.productId(),
-                dto.storageLocationId(),
-                dto.quantity()
-        );
-
-        return saveMovement(new StockMovementCreateDTO(
+        StockMovementCreateDTO movementDTO = new StockMovementCreateDTO(
                 dto.productId(),
                 dto.storageLocationId(),
                 dto.quantity(),
@@ -106,14 +95,32 @@ public class StockMovementService {
                 dto.reference(),
                 dto.responsible(),
                 dto.notes()
-        ), product, storageLocation);
+        );
+        MovementValidationContext context = validateMovementBaseData(movementDTO);
+
+        inventoryService.applyOutboundStockMovement(
+                dto.productId(),
+                dto.storageLocationId(),
+                dto.quantity()
+        );
+
+        return saveMovement(movementDTO, context);
     }
 
     @Transactional
     public StockMovement registerAdjustment(StockAdjustmentRequestDTO dto) {
         validateAdjustment(dto);
-        Product product = validateActiveProduct(dto.productId());
-        StorageLocation storageLocation = validateActiveStorageLocation(dto.storageLocationId());
+        MovementValidationContext context = validateMovementBaseData(new StockMovementCreateDTO(
+                dto.productId(),
+                dto.storageLocationId(),
+                1,
+                MovementType.ADJUSTMENT,
+                dto.reason(),
+                null,
+                null,
+                dto.responsible(),
+                dto.notes()
+        ));
 
         InventoryService.StockAdjustmentResult adjustment = inventoryService.applyAdjustment(
                 dto.productId(),
@@ -131,7 +138,7 @@ public class StockMovementService {
                 ? balanceNotes
                 : dto.notes() + " " + balanceNotes;
 
-        return saveMovement(new StockMovementCreateDTO(
+        StockMovementCreateDTO movementDTO = new StockMovementCreateDTO(
                 dto.productId(),
                 dto.storageLocationId(),
                 movementQuantity,
@@ -141,34 +148,34 @@ public class StockMovementService {
                 null,
                 dto.responsible(),
                 notes
-        ), product, storageLocation);
+        );
+
+        return saveMovement(movementDTO, context);
     }
 
-    private StockMovement saveMovement(StockMovementCreateDTO dto, Product product, StorageLocation storageLocation) {
+    private StockMovement saveMovement(StockMovementCreateDTO dto, MovementValidationContext context) {
         validateMovementQuantity(dto.quantity());
-        return stockmovementRepository.save(new StockMovement(dto, product, storageLocation));
+        return stockmovementRepository.save(new StockMovement(dto, context.product(), context.storageLocation()));
     }
 
-    private Product validateActiveProduct(Long productId) {
-        Product product = productRepository.findById(productId)
+    private MovementValidationContext validateMovementBaseData(StockMovementCreateDTO dto) {
+        validateMovementQuantity(dto.quantity());
+
+        Product product = productRepository.findById(dto.productId())
                 .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
 
         if (Boolean.FALSE.equals(product.getActive())) {
             throw new InactiveResourceException("Produto inativo não pode receber movimentação de estoque.");
         }
 
-        return product;
-    }
-
-    private StorageLocation validateActiveStorageLocation(Long storageLocationId) {
-        StorageLocation storageLocation = storageLocationRepository.findById(storageLocationId)
+        StorageLocation storageLocation = storageLocationRepository.findById(dto.storageLocationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Local de armazenamento não encontrado."));
 
         if (Boolean.FALSE.equals(storageLocation.getActive())) {
             throw new InactiveResourceException("Local de armazenamento inativo não pode receber movimentação.");
         }
 
-        return storageLocation;
+        return new MovementValidationContext(product, storageLocation);
     }
 
     private void validateMovementQuantity(Integer quantity) {
@@ -185,6 +192,12 @@ public class StockMovementService {
         if (dto.reason() == null || dto.reason().isBlank()) {
             throw new InvalidStockMovementException("ADJUSTMENT exige motivo.");
         }
+    }
+
+    private record MovementValidationContext(
+            Product product,
+            StorageLocation storageLocation
+    ) {
     }
 
     public void deleteStockMovementById(Long id) {
