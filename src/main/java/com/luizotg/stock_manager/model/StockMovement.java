@@ -60,10 +60,39 @@ public class StockMovement {
     }
 
     public StockMovement(StockMovementCreateDTO dto, Product product, StorageLocation storageLocation) {
-        applyDto(dto.productId(), dto.storageLocationId(), dto.quantity(), dto.movementType(),
-                dto.reason(), dto.movementDate(), dto.reference(), dto.responsible(), dto.notes());
+        this(
+                product,
+                storageLocation,
+                dto.quantity(),
+                dto.movementType(),
+                dto.reason(),
+                dto.movementDate(),
+                dto.reference(),
+                dto.responsible(),
+                dto.notes()
+        );
+    }
+
+    public StockMovement(
+            Product product,
+            StorageLocation storageLocation,
+            Integer quantity,
+            MovementType movementType,
+            String reason,
+            LocalDateTime movementDate,
+            String reference,
+            String responsible,
+            String notes
+    ) {
         this.product = product;
         this.storageLocation = storageLocation;
+        this.quantity = quantity;
+        this.movementType = movementType;
+        this.reason = reason;
+        this.movementDate = movementDate != null ? movementDate : LocalDateTime.now();
+        this.reference = reference;
+        this.responsible = responsible;
+        this.notes = notes;
     }
 
     private void applyDto(Long productId, Long storageLocationId, Integer quantity, MovementType movementType,

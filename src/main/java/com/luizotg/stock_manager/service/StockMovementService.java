@@ -155,7 +155,18 @@ public class StockMovementService {
 
     private StockMovement saveMovement(StockMovementCreateDTO dto, MovementValidationContext context) {
         validateMovementQuantity(dto.quantity());
-        return stockmovementRepository.save(new StockMovement(dto, context.product(), context.storageLocation()));
+        StockMovement stockMovement = new StockMovement(
+                context.product(),
+                context.storageLocation(),
+                dto.quantity(),
+                dto.movementType(),
+                dto.reason(),
+                dto.movementDate(),
+                dto.reference(),
+                dto.responsible(),
+                dto.notes()
+        );
+        return stockmovementRepository.save(stockMovement);
     }
 
     private MovementValidationContext validateMovementBaseData(StockMovementCreateDTO dto) {
