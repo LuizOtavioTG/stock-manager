@@ -58,6 +58,7 @@ class ProductServiceTest {
                 .isInstanceOf(DuplicateResourceException.class)
                 .hasMessage("SKU já está em uso.");
 
+        verify(productRepository).existsBySku(SKU);
         verify(productRepository, never()).save(any(Product.class));
     }
 
@@ -69,6 +70,7 @@ class ProductServiceTest {
         Product product = productService.saveProduct(createDTO(SKU));
 
         assertThat(product.getSku()).isEqualTo(SKU);
+        verify(productRepository).existsBySku(SKU);
         verify(productRepository).save(any(Product.class));
     }
 
@@ -81,6 +83,7 @@ class ProductServiceTest {
                 .isInstanceOf(DuplicateResourceException.class)
                 .hasMessage("SKU já está em uso.");
 
+        verify(productRepository).existsBySkuAndIdNot(SKU, PRODUCT_ID);
         verify(productRepository, never()).save(any(Product.class));
     }
 
@@ -94,6 +97,7 @@ class ProductServiceTest {
         Product updated = productService.updateProduct(PRODUCT_ID, updateDTO(SKU));
 
         assertThat(updated.getSku()).isEqualTo(SKU);
+        verify(productRepository).existsBySkuAndIdNot(SKU, PRODUCT_ID);
         verify(productRepository).save(product);
     }
 
