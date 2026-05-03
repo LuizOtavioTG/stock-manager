@@ -16,6 +16,7 @@ import com.luizotg.stock_manager.repository.InventoryRepository;
 import com.luizotg.stock_manager.repository.ProductRepository;
 import com.luizotg.stock_manager.repository.StockMovementRepository;
 import com.luizotg.stock_manager.repository.StorageLocationRepository;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Method;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -260,6 +262,16 @@ class StockMovementServiceTest {
     }
 
     @Test
+    void stockMovementCreationMethodsAreTransactional() throws NoSuchMethodException {
+        assertThat(method("registerInbound", StockInboundRequestDTO.class).isAnnotationPresent(Transactional.class))
+                .isTrue();
+        assertThat(method("registerOutbound", StockOutboundRequestDTO.class).isAnnotationPresent(Transactional.class))
+                .isTrue();
+        assertThat(method("registerAdjustment", StockAdjustmentRequestDTO.class).isAnnotationPresent(Transactional.class))
+                .isTrue();
+    }
+
+    @Test
     void registerInboundRejectsInactiveProduct() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(false)));
 
@@ -388,6 +400,10 @@ class StockMovementServiceTest {
         ArgumentCaptor<StockMovement> captor = ArgumentCaptor.forClass(StockMovement.class);
         verify(stockMovementRepository).save(captor.capture());
         return captor.getValue();
+    }
+
+    private Method method(String name, Class<?> parameterType) throws NoSuchMethodException {
+        return StockMovementService.class.getMethod(name, parameterType);
     }
 
     private Product product(Boolean active) {
