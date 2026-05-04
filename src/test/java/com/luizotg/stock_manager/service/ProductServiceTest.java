@@ -5,6 +5,7 @@ import com.luizotg.stock_manager.dto.product.ProductUpdateDTO;
 import com.luizotg.stock_manager.exception.BusinessException;
 import com.luizotg.stock_manager.exception.DuplicateResourceException;
 import com.luizotg.stock_manager.exception.InactiveResourceException;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.CategoryRepository;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -170,6 +172,7 @@ class ProductServiceTest {
                 .isInstanceOf(InactiveResourceException.class)
                 .hasMessage("Fornecedor inativo não pode ser associado a um novo produto.");
 
+        verify(supplierRepository).findAllById(Set.of(SUPPLIER_ID));
         verify(productRepository, never()).save(any(Product.class));
     }
 
@@ -185,6 +188,7 @@ class ProductServiceTest {
         )).isInstanceOf(InactiveResourceException.class)
                 .hasMessage("Fornecedor inativo não pode ser associado a um novo produto.");
 
+        verify(supplierRepository).findAllById(Set.of(SUPPLIER_ID));
         verify(productRepository, never()).save(any(Product.class));
     }
 
@@ -198,7 +202,21 @@ class ProductServiceTest {
         Product product = productService.saveProduct(createDTO(SKU, "Product", 10.0, 15.0, Set.of(SUPPLIER_ID)));
 
         assertThat(product.getSuppliers()).hasSize(1);
+        verify(supplierRepository, times(2)).findAllById(Set.of(SUPPLIER_ID));
         verify(productRepository).save(any(Product.class));
+    }
+
+    @Test
+    void saveProductThrowsWhenSupplierDoesNotExist() {
+        when(supplierRepository.findAllById(Set.of(SUPPLIER_ID)))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> productService.saveProduct(createDTO(SKU, "Product", 10.0, 15.0, Set.of(SUPPLIER_ID))))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Um ou mais fornecedores não foram encontrados.");
+
+        verify(supplierRepository, times(2)).findAllById(Set.of(SUPPLIER_ID));
+        verify(productRepository, never()).save(any(Product.class));
     }
 
     private ProductCreateDTO createDTO(String sku) {
