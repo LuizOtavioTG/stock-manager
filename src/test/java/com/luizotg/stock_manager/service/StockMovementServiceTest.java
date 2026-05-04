@@ -127,8 +127,33 @@ class StockMovementServiceTest {
     }
 
     @Test
+    void registerOutboundWithFullAvailableQuantityEmptiesInventoryAndCreatesMovement() {
+        Inventory inventory = inventoryWithQuantity(10);
+        mockProductAndStorageLocation();
+        when(inventoryRepository.findByProductIdAndStorageLocationId(PRODUCT_ID, STORAGE_LOCATION_ID))
+                .thenReturn(Optional.of(inventory));
+        when(inventoryRepository.save(any(Inventory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        stockMovementService.registerOutbound(new StockOutboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                10,
+                "Venda",
+                "ORDER-002",
+                "Luiz",
+                null
+        ));
+
+        assertThat(inventory.getQuantity()).isZero();
+        StockMovement movement = savedMovement();
+        assertThat(movement.getMovementType()).isEqualTo(MovementType.OUTBOUND);
+        assertThat(movement.getQuantity()).isEqualTo(10);
+    }
+
+    @Test
     void registerOutboundWithoutEnoughStockThrowsAndDoesNotCreateMovement() {
-        Inventory inventory = inventoryWithQuantity(3);
+        Inventory inventory = inventoryWithQuantity(10);
         mockProductAndStorageLocation();
         when(inventoryRepository.findByProductIdAndStorageLocationId(PRODUCT_ID, STORAGE_LOCATION_ID))
                 .thenReturn(Optional.of(inventory));
@@ -136,7 +161,7 @@ class StockMovementServiceTest {
         assertThatThrownBy(() -> stockMovementService.registerOutbound(new StockOutboundRequestDTO(
                 PRODUCT_ID,
                 STORAGE_LOCATION_ID,
-                5,
+                11,
                 "Venda",
                 "ORDER-001",
                 "Luiz",
@@ -144,7 +169,28 @@ class StockMovementServiceTest {
         ))).isInstanceOf(InsufficientStockException.class)
                 .hasMessage("Estoque insuficiente para realizar saída.");
 
-        assertThat(inventory.getQuantity()).isEqualTo(3);
+        assertThat(inventory.getQuantity()).isEqualTo(10);
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
+    void registerOutboundWithoutInventoryThrowsAndDoesNotCreateMovement() {
+        mockProductAndStorageLocation();
+        when(inventoryRepository.findByProductIdAndStorageLocationId(PRODUCT_ID, STORAGE_LOCATION_ID))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> stockMovementService.registerOutbound(new StockOutboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                5,
+                "Venda",
+                "ORDER-003",
+                "Luiz",
+                null
+        ))).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Inventário não encontrado para este produto e local de armazenamento.");
+
         verify(inventoryRepository, never()).save(any(Inventory.class));
         verify(stockMovementRepository, never()).save(any(StockMovement.class));
     }
