@@ -413,6 +413,26 @@ class StockMovementServiceTest {
     }
 
     @Test
+    void registerInboundRejectsInactiveStorageLocationBeforeChangingInventory() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(true)));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation(false)));
+
+        assertThatThrownBy(() -> stockMovementService.registerInbound(new StockInboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                5,
+                "Compra",
+                "NF-001",
+                "Luiz",
+                null
+        ))).isInstanceOf(InactiveResourceException.class)
+                .hasMessage("Local de armazenamento inativo não pode receber movimentação.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
     void registerOutboundRejectsInactiveStorageLocationBeforeChangingInventory() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(true)));
         when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation(false)));
