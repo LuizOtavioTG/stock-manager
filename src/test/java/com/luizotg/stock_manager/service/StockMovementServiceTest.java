@@ -337,6 +337,25 @@ class StockMovementServiceTest {
     }
 
     @Test
+    void registerOutboundRejectsInactiveProduct() {
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(false)));
+
+        assertThatThrownBy(() -> stockMovementService.registerOutbound(new StockOutboundRequestDTO(
+                PRODUCT_ID,
+                STORAGE_LOCATION_ID,
+                5,
+                "Venda",
+                "ORDER-004",
+                "Luiz",
+                null
+        ))).isInstanceOf(InactiveResourceException.class)
+                .hasMessage("Produto inativo não pode receber movimentação de estoque.");
+
+        verify(inventoryRepository, never()).save(any(Inventory.class));
+        verify(stockMovementRepository, never()).save(any(StockMovement.class));
+    }
+
+    @Test
     void registerAdjustmentRejectsInactiveProductBeforeChangingInventory() {
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(false)));
 
