@@ -8,6 +8,7 @@ import { LayoutService } from '../service/layout.service';
 
 @Component({
   selector: 'app-layout',
+  standalone: true,
   imports: [AppSidebarComponent, AppTopbarComponent, NgClass, RouterOutlet],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.scss'

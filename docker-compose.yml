@@ -32,5 +32,18 @@ services:
     ports:
       - "8080:8080"
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: stock-manager-frontend
+    restart: unless-stopped
+    ports:
+      - "14200:4200"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    command: npm start -- --host 0.0.0.0 --poll 2000
+
 volumes:
   postgres-data:
+  frontend-node-modules:
