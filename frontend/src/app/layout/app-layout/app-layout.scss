@@ -39,37 +39,33 @@
     margin-left: 22rem;
   }
 
-  .layout-wrapper.layout-static.layout-static-inactive {
-    .layout-sidebar {
-      left: 0;
-      transform: translateX(-100%);
-    }
-
-    .layout-main-container {
-      margin-left: 0;
-      padding-left: 2rem;
-    }
+  .layout-wrapper.layout-static.layout-static-inactive .layout-main-container {
+    margin-left: 0;
+    padding-left: 2rem;
   }
 
-  .layout-wrapper.layout-overlay {
-    .layout-main-container {
-      margin-left: 0;
-      padding-left: 2rem;
-    }
-
-    .layout-sidebar {
-      border-bottom-left-radius: 0;
-      border-right: 1px solid var(--surface-border);
-      border-top-left-radius: 0;
-      box-shadow: var(--layout-overlay-shadow);
-      height: 100vh;
-      left: 0;
-      top: 0;
-      transform: translateX(-100%);
-    }
+  .layout-wrapper.layout-static.layout-static-inactive ::ng-deep app-sidebar .layout-sidebar {
+    left: 0;
+    transform: translateX(-100%);
   }
 
-  .layout-wrapper.layout-overlay.layout-overlay-active .layout-sidebar {
+  .layout-wrapper.layout-overlay .layout-main-container {
+    margin-left: 0;
+    padding-left: 2rem;
+  }
+
+  .layout-wrapper.layout-overlay ::ng-deep app-sidebar .layout-sidebar {
+    border-bottom-left-radius: 0;
+    border-right: 1px solid var(--surface-border);
+    border-top-left-radius: 0;
+    box-shadow: var(--layout-overlay-shadow);
+    height: 100vh;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+  }
+
+  .layout-wrapper.layout-overlay.layout-overlay-active ::ng-deep app-sidebar .layout-sidebar {
     transform: translateX(0);
   }
 
@@ -79,39 +75,35 @@
 }
 
 @media (max-width: 991px) {
-  .layout-wrapper {
-    .layout-main-container {
-      margin-left: 0;
-      padding-left: 2rem;
-    }
-
-    .layout-sidebar {
-      border-bottom-left-radius: 0;
-      border-top-left-radius: 0;
-      height: 100vh;
-      left: 0;
-      top: 0;
-      transform: translateX(-100%);
-    }
-
-    .layout-mask {
-      display: none;
-      height: 100%;
-      left: 0;
-      position: fixed;
-      top: 0;
-      width: 100%;
-      z-index: 998;
-    }
+  .layout-wrapper .layout-main-container {
+    margin-left: 0;
+    padding-left: 2rem;
   }
 
-  .layout-wrapper.layout-mobile-active {
-    .layout-sidebar {
-      transform: translateX(0);
-    }
+  .layout-wrapper ::ng-deep app-sidebar .layout-sidebar {
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+  }
 
-    .layout-mask {
-      display: block;
-    }
+  .layout-wrapper .layout-mask {
+    display: none;
+    height: 100%;
+    left: 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 998;
+  }
+
+  .layout-wrapper.layout-mobile-active ::ng-deep app-sidebar .layout-sidebar {
+    transform: translateX(0);
+  }
+
+  .layout-wrapper.layout-mobile-active .layout-mask {
+    display: block;
   }
 }
