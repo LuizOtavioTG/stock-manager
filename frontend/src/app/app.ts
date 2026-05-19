@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+
+import { AppLayoutComponent } from './layout/app-layout/app-layout';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [AppLayoutComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
-  protected title = 'stock-manager-frontend';
-}
+export class App {}

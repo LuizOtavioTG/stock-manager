@@ -1,0 +1,67 @@
+.page-heading {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.page-heading span {
+  color: var(--p-surface-500);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.page-heading h1 {
+  color: var(--p-surface-950);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.workspace-panel {
+  align-items: center;
+  background: var(--p-surface-0);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 3px 18px rgb(15 23 42 / 0.08);
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  min-height: 10rem;
+  padding: 1.5rem;
+}
+
+.panel-icon {
+  align-items: center;
+  background: var(--p-primary-50);
+  border: 1px solid var(--p-primary-100);
+  border-radius: 8px;
+  color: var(--p-primary-600);
+  display: inline-flex;
+  font-size: 1.4rem;
+  height: 3.25rem;
+  justify-content: center;
+  width: 3.25rem;
+}
+
+.workspace-panel h2 {
+  color: var(--p-surface-900);
+  font-size: 1.1rem;
+  margin: 1rem 0 0.35rem;
+}
+
+.workspace-panel p {
+  color: var(--p-surface-600);
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .page-heading h1 {
+    font-size: 1.55rem;
+  }
+
+  .workspace-panel {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+}

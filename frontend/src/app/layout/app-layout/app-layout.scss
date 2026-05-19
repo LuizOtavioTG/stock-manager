@@ -1,0 +1,117 @@
+:host {
+  display: block;
+}
+
+.layout-wrapper {
+  min-height: 100vh;
+}
+
+.layout-main-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100vh;
+  padding: 6rem 2rem 0;
+  transition: margin-left var(--layout-section-transition-duration);
+}
+
+.layout-main {
+  flex: 1 1 auto;
+  padding-bottom: 2rem;
+}
+
+.layout-mask {
+  background: var(--maskbg);
+  border: 0;
+  cursor: pointer;
+}
+
+@media screen and (min-width: 1960px) {
+  .layout-main {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 1504px;
+  }
+}
+
+@media (min-width: 992px) {
+  .layout-wrapper.layout-static .layout-main-container {
+    margin-left: 22rem;
+  }
+
+  .layout-wrapper.layout-static.layout-static-inactive {
+    .layout-sidebar {
+      left: 0;
+      transform: translateX(-100%);
+    }
+
+    .layout-main-container {
+      margin-left: 0;
+      padding-left: 2rem;
+    }
+  }
+
+  .layout-wrapper.layout-overlay {
+    .layout-main-container {
+      margin-left: 0;
+      padding-left: 2rem;
+    }
+
+    .layout-sidebar {
+      border-bottom-left-radius: 0;
+      border-right: 1px solid var(--surface-border);
+      border-top-left-radius: 0;
+      box-shadow: var(--layout-overlay-shadow);
+      height: 100vh;
+      left: 0;
+      top: 0;
+      transform: translateX(-100%);
+    }
+  }
+
+  .layout-wrapper.layout-overlay.layout-overlay-active .layout-sidebar {
+    transform: translateX(0);
+  }
+
+  .layout-wrapper .layout-mask {
+    display: none;
+  }
+}
+
+@media (max-width: 991px) {
+  .layout-wrapper {
+    .layout-main-container {
+      margin-left: 0;
+      padding-left: 2rem;
+    }
+
+    .layout-sidebar {
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      transform: translateX(-100%);
+    }
+
+    .layout-mask {
+      display: none;
+      height: 100%;
+      left: 0;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 998;
+    }
+  }
+
+  .layout-wrapper.layout-mobile-active {
+    .layout-sidebar {
+      transform: translateX(0);
+    }
+
+    .layout-mask {
+      display: block;
+    }
+  }
+}

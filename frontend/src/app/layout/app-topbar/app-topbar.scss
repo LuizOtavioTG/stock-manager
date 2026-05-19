@@ -1,0 +1,100 @@
+.layout-topbar {
+  align-items: center;
+  background-color: var(--surface-card);
+  display: flex;
+  height: 4rem;
+  left: 0;
+  padding: 0 2rem;
+  position: fixed;
+  top: 0;
+  transition: left var(--layout-section-transition-duration);
+  width: 100%;
+  z-index: 997;
+}
+
+.layout-topbar-logo-container {
+  align-items: center;
+  display: flex;
+  width: 20rem;
+}
+
+.layout-topbar-logo {
+  align-items: center;
+  border-radius: var(--content-border-radius);
+  color: var(--text-color);
+  display: inline-flex;
+  font-size: 1.3rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.layout-topbar-logo:focus-visible,
+.layout-topbar-action:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: 0 none;
+}
+
+.layout-topbar-logo-mark {
+  align-items: center;
+  background: var(--primary-color);
+  border-radius: 10px;
+  color: var(--primary-contrast-color);
+  display: inline-flex;
+  font-size: 1rem;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.layout-topbar-action {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-color);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  transition: background-color var(--element-transition-duration);
+  width: 2.5rem;
+}
+
+.layout-topbar-action:hover {
+  background-color: var(--surface-hover);
+}
+
+.layout-topbar-action i {
+  font-size: 1.25rem;
+}
+
+.layout-topbar-action span {
+  display: none;
+  font-size: 1rem;
+}
+
+.layout-menu-button {
+  margin-right: 0.5rem;
+}
+
+.layout-topbar-actions {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+@media (max-width: 991px) {
+  .layout-topbar {
+    padding: 0 2rem;
+  }
+
+  .layout-topbar-logo-container {
+    width: auto;
+  }
+
+  .layout-menu-button {
+    margin-left: 0;
+    margin-right: 0.5rem;
+  }
+}

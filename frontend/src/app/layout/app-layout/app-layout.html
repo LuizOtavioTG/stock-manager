@@ -1,0 +1,13 @@
+<div class="layout-wrapper" [ngClass]="containerClass()">
+  <app-topbar />
+
+  <app-sidebar />
+
+  <button class="layout-mask" type="button" aria-label="Fechar menu" (click)="layoutService.closeMenu()"></button>
+
+  <main class="layout-main-container">
+    <section class="layout-main">
+      <router-outlet />
+    </section>
+  </main>
+</div>

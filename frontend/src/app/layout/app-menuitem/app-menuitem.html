@@ -1,0 +1,49 @@
+@if (root() && isVisible()) {
+  <div class="layout-menuitem-root-text">{{ item().label }}</div>
+}
+
+@if ((!hasRouterLink() || hasChildren()) && isVisible()) {
+  <a
+    [attr.href]="item().url"
+    (click)="itemClick($event)"
+    [ngClass]="item().styleClass"
+    [attr.target]="item().target"
+    tabindex="0"
+  >
+    <i [ngClass]="item().icon" class="layout-menuitem-icon"></i>
+    <span class="layout-menuitem-text">{{ item().label }}</span>
+    @if (hasChildren()) {
+      <i class="pi pi-fw pi-angle-down layout-submenu-toggler"></i>
+    }
+  </a>
+}
+
+@if (hasRouterLink() && !hasChildren() && isVisible()) {
+  <a
+    (click)="itemClick($event)"
+    [ngClass]="item().styleClass"
+    [routerLink]="item().routerLink"
+    routerLinkActive="active-route"
+    [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }"
+    [queryParams]="item().queryParams"
+    [fragment]="item().fragment"
+    [queryParamsHandling]="item().queryParamsHandling"
+    [preserveFragment]="item().preserveFragment"
+    [skipLocationChange]="item().skipLocationChange"
+    [replaceUrl]="item().replaceUrl"
+    [state]="item().state"
+    [attr.target]="item().target"
+    tabindex="0"
+  >
+    <i [ngClass]="item().icon" class="layout-menuitem-icon"></i>
+    <span class="layout-menuitem-text">{{ item().label }}</span>
+  </a>
+}
+
+@if (hasChildren() && isVisible() && (root() || isActive())) {
+  <ul class="layout-submenu" [class.layout-root-submenulist]="root()">
+    @for (child of item().items; track child.label) {
+      <li app-menuitem [item]="child" [parentPath]="fullPath()" [root]="false"></li>
+    }
+  </ul>
+}
