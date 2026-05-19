@@ -1,5 +1,14 @@
 # Stock Manager
 
+## Estrutura do projeto
+
+```text
+.
+├── backend/   # Aplicação Java Spring Boot
+├── frontend/  # Aplicação Angular
+└── docker-compose.yml
+```
+
 ## Executando com Docker
 1. Construa e inicialize os serviços (aplicação e banco):
    ```bash
@@ -9,6 +18,22 @@
 3. O banco Postgres local estará em `localhost:5432` (db `stock_manager`, usuário `postgres`, senha `postgres`).
 
 Para desligar os serviços use `Ctrl+C` e em seguida `docker compose down`.
+
+## Backend
+
+O backend fica em `backend/`.
+
+Para rodar comandos Maven diretamente:
+
+```bash
+cd backend
+./mvnw test
+./mvnw spring-boot:run
+```
+
+## Frontend
+
+O frontend deve ser criado dentro de `frontend/`.
 
 ## Controle de estoque
 

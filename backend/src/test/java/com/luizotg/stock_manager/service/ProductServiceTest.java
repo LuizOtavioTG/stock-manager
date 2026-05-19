@@ -297,6 +297,8 @@ class ProductServiceTest {
                 active,
                 null,
                 null,
+                null,
+                null,
                 null
         );
     }

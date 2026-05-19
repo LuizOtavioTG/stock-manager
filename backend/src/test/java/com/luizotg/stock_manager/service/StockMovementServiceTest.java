@@ -508,6 +508,8 @@ class StockMovementServiceTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
     }
@@ -525,6 +527,8 @@ class StockMovementServiceTest {
                 null,
                 false,
                 active,
+                null,
+                null,
                 null,
                 null,
                 null,
