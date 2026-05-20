@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { DashboardComponent } from './pages/dashboard/dashboard';
 import { PlaceholderPage } from './pages/placeholder-page/placeholder-page';
 
 export const routes: Routes = [
@@ -9,7 +10,7 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: PlaceholderPage,
+    component: DashboardComponent,
     data: { title: 'Dashboard', section: 'Visão geral' }
   },
   {

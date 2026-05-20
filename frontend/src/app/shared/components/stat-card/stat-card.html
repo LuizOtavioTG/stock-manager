@@ -1,0 +1,17 @@
+<p-card [styleClass]="cardClass()">
+  <div class="stat-card__header">
+    <span class="stat-card__icon" aria-hidden="true">
+      <i [class]="icon()"></i>
+    </span>
+
+    @if (tag()) {
+      <p-tag [severity]="severity()" [value]="tag()" />
+    }
+  </div>
+
+  <div class="stat-card__body">
+    <span class="stat-card__value">{{ value() }}</span>
+    <h2>{{ title() }}</h2>
+    <p>{{ description() }}</p>
+  </div>
+</p-card>

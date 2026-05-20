@@ -1,0 +1,24 @@
+<section class="dashboard-heading">
+  <div>
+    <span>Visão geral</span>
+    <h1>Dashboard</h1>
+  </div>
+
+  <div class="dashboard-heading__meta" aria-label="Resumo dos indicadores">
+    <i class="pi pi-chart-line" aria-hidden="true"></i>
+    <span>Indicadores mockados</span>
+  </div>
+</section>
+
+<section class="dashboard-grid" aria-label="Indicadores de estoque">
+  @for (stat of stats; track stat.title) {
+    <app-stat-card
+      [title]="stat.title"
+      [value]="stat.value"
+      [description]="stat.description"
+      [icon]="stat.icon"
+      [severity]="stat.severity"
+      [tag]="stat.tag"
+    />
+  }
+</section>

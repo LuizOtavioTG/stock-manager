@@ -1,0 +1,97 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+:host ::ng-deep .stat-card {
+  background: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 0.06);
+  height: 100%;
+  overflow: hidden;
+}
+
+:host ::ng-deep .stat-card .p-card-body {
+  padding: 1.25rem;
+}
+
+:host ::ng-deep .stat-card .p-card-content {
+  padding: 0;
+}
+
+.stat-card__header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.stat-card__icon {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 1.15rem;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.stat-card__body {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1.25rem;
+}
+
+.stat-card__value {
+  color: var(--p-surface-950);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.stat-card__body h2 {
+  color: var(--p-surface-900);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.stat-card__body p {
+  color: var(--p-surface-600);
+  line-height: 1.45;
+  margin: 0;
+}
+
+:host ::ng-deep .stat-card--danger .stat-card__icon {
+  background: color-mix(in srgb, var(--p-red-500) 12%, white);
+  color: var(--p-red-600);
+}
+
+:host ::ng-deep .stat-card--warn .stat-card__icon {
+  background: color-mix(in srgb, var(--p-orange-500) 14%, white);
+  color: var(--p-orange-600);
+}
+
+:host ::ng-deep .stat-card--info .stat-card__icon {
+  background: color-mix(in srgb, var(--p-blue-500) 12%, white);
+  color: var(--p-blue-600);
+}
+
+:host ::ng-deep .stat-card--secondary .stat-card__icon {
+  background: color-mix(in srgb, var(--p-slate-500) 12%, white);
+  color: var(--p-slate-600);
+}
+
+:host ::ng-deep .stat-card--success .stat-card__icon {
+  background: color-mix(in srgb, var(--p-green-500) 12%, white);
+  color: var(--p-green-600);
+}
+
+:host ::ng-deep .stat-card--contrast .stat-card__icon {
+  background: var(--p-surface-900);
+  color: var(--p-surface-0);
+}
