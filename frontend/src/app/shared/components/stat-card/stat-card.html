@@ -10,7 +10,12 @@
   </div>
 
   <div class="stat-card__body">
-    <span class="stat-card__value">{{ value() }}</span>
+    @if (loading()) {
+      <p-skeleton width="4rem" height="2rem" />
+    } @else {
+      <span class="stat-card__value">{{ value() }}</span>
+    }
+
     <h2>{{ title() }}</h2>
     <p>{{ description() }}</p>
   </div>
