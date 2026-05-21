@@ -15,7 +15,8 @@ export const routes: Routes = [
   },
   {
     path: 'estoque/inventario',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/inventory/pages/inventory-list/inventory-list').then((m) => m.InventoryListComponent),
     data: { title: 'Inventário', section: 'Estoque' }
   },
   {

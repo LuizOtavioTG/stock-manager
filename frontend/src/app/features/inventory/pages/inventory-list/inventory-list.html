@@ -1,0 +1,101 @@
+<section class="inventory-heading">
+  <div>
+    <span>Estoque</span>
+    <h1>Inventário</h1>
+  </div>
+
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    outlined
+    icon="pi pi-refresh"
+    label="Atualizar"
+    [loading]="isLoading()"
+    (click)="loadInventory(inventoryPage().number, pageSize())"
+  ></button>
+</section>
+
+<p-card styleClass="inventory-card">
+  <ng-template #title>
+    <div class="inventory-card__title">
+      <div>
+        <h2>Itens de inventário</h2>
+        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
+      </div>
+    </div>
+  </ng-template>
+
+  <p-table
+    [value]="items()"
+    [loading]="isLoading()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    [tableStyle]="{ 'min-width': '76rem' }"
+    dataKey="id"
+    responsiveLayout="scroll"
+    (onLazyLoad)="onPageChange($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="productName">Produto <p-sortIcon field="productName" /></th>
+        <th pSortableColumn="storageLocationName">Local de estoque <p-sortIcon field="storageLocationName" /></th>
+        <th pSortableColumn="quantity" class="numeric-column">Quantidade <p-sortIcon field="quantity" /></th>
+        <th pSortableColumn="minimumStock" class="numeric-column">Estoque mínimo <p-sortIcon field="minimumStock" /></th>
+        <th pSortableColumn="reorderPoint" class="numeric-column">Ponto de reposição <p-sortIcon field="reorderPoint" /></th>
+        <th pSortableColumn="maximumStock" class="numeric-column">Estoque máximo <p-sortIcon field="maximumStock" /></th>
+        <th pSortableColumn="stockStatus">Status <p-sortIcon field="stockStatus" /></th>
+        <th class="numeric-column">Reposição sugerida</th>
+        <th class="actions-column">Ações</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+      <tr>
+        <td>
+          <div class="item-cell">
+            <strong>{{ item.productName || 'Produto não informado' }}</strong>
+            <span>#{{ item.productId || '-' }}</span>
+          </div>
+        </td>
+        <td>
+          <div class="item-cell">
+            <strong>{{ item.storageLocationName || 'Local não informado' }}</strong>
+            <span>#{{ item.storageLocationId || '-' }}</span>
+          </div>
+        </td>
+        <td class="numeric-column">{{ item.quantity }}</td>
+        <td class="numeric-column">{{ item.minimumStock }}</td>
+        <td class="numeric-column">{{ item.reorderPoint }}</td>
+        <td class="numeric-column">{{ item.maximumStock ?? '-' }}</td>
+        <td>
+          <p-tag [severity]="statusSeverity(item.stockStatus)" [value]="statusLabel(item.stockStatus)" />
+        </td>
+        <td class="numeric-column">{{ item.suggestedReorderQuantity }}</td>
+        <td>
+          <div class="row-actions">
+            <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="showComingSoon('Visualizar')"></button>
+            <button pButton type="button" text rounded icon="pi pi-sliders-h" aria-label="Editar limites" title="Editar limites" (click)="showComingSoon('Editar limites')"></button>
+            <button pButton type="button" text rounded icon="pi pi-arrow-right-arrow-left" aria-label="Movimentar" title="Movimentar" (click)="showComingSoon('Movimentar')"></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9">
+          <div class="empty-state">
+            <i class="pi pi-inbox" aria-hidden="true"></i>
+            <strong>Nenhum item encontrado</strong>
+            <span>O inventário ainda não possui registros para exibição.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
