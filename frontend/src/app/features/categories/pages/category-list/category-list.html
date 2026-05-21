@@ -12,6 +12,10 @@
   (refresh)="loadCategories(categoriesPage().number, pageSize())"
   (lazyLoad)="onPageChange($event)"
 >
+    <ng-template appPaginatedListActions>
+      <button pButton type="button" icon="pi pi-plus" label="Nova categoria" (click)="openCreateDialog()"></button>
+    </ng-template>
+
     <ng-template appPaginatedListBody let-category>
       <tr>
         <td>
@@ -29,8 +33,8 @@
         <td>
           <div class="row-actions">
             <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openCategoryDetails(category)"></button>
-            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
-            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="showComingSoon('Excluir')"></button>
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="openEditDialog(category)"></button>
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="confirmDeleteCategory(category)"></button>
           </div>
         </td>
       </tr>
@@ -48,6 +52,53 @@
       </tr>
     </ng-template>
 </app-paginated-list>
+
+<p-confirmDialog />
+
+<p-dialog
+  [header]="formTitle()"
+  modal
+  [visible]="isFormDialogVisible()"
+  [style]="{ width: 'min(38rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isFormDialogVisible.set($event)"
+>
+  <form class="category-form" [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
+    <label class="form-field">
+      <span>Nome</span>
+      <input pInputText type="text" formControlName="name" maxlength="100" autocomplete="off" />
+      @if (shouldShowError('name')) {
+        <small>Informe um nome com até 100 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Descrição</span>
+      <textarea pTextarea formControlName="description" maxlength="255" rows="4"></textarea>
+      @if (shouldShowError('description')) {
+        <small>A descrição deve ter no máximo 255 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Categoria pai</span>
+      <p-select
+        formControlName="parentId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Sem categoria pai"
+        appendTo="body"
+        [showClear]="true"
+        [loading]="isLoadingParentCategories()"
+        [options]="parentCategoryOptions()"
+      />
+    </label>
+
+    <div class="form-actions">
+      <button pButton type="button" severity="secondary" outlined label="Cancelar" (click)="isFormDialogVisible.set(false)"></button>
+      <button pButton type="submit" label="Salvar" icon="pi pi-check" [loading]="isSaving()"></button>
+    </div>
+  </form>
+</p-dialog>
 
 <p-dialog
   header="Detalhes da categoria"

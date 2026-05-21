@@ -4,16 +4,22 @@
     <h1>{{ pageTitle() }}</h1>
   </div>
 
-  <button
-    pButton
-    type="button"
-    severity="secondary"
-    outlined
-    icon="pi pi-refresh"
-    label="Atualizar"
-    [loading]="loading()"
-    (click)="refresh.emit()"
-  ></button>
+  <div class="list-heading__actions">
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      icon="pi pi-refresh"
+      label="Atualizar"
+      [loading]="loading()"
+      (click)="refresh.emit()"
+    ></button>
+
+    @if (actionsTemplate) {
+      <ng-container *ngTemplateOutlet="actionsTemplate.templateRef"></ng-container>
+    }
+  </div>
 </section>
 
 <p-card styleClass="paginated-list-card">
