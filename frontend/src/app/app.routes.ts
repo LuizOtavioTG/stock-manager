@@ -44,7 +44,8 @@ export const routes: Routes = [
   },
   {
     path: 'cadastros/fornecedores',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/suppliers/pages/supplier-list/supplier-list').then((m) => m.SupplierListComponent),
     data: { title: 'Fornecedores', section: 'Cadastros' }
   },
   {

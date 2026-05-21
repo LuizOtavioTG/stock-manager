@@ -1,0 +1,144 @@
+<section class="suppliers-heading">
+  <div>
+    <span>Cadastros</span>
+    <h1>Fornecedores</h1>
+  </div>
+
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    outlined
+    icon="pi pi-refresh"
+    label="Atualizar"
+    [loading]="isLoading()"
+    (click)="loadSuppliers(suppliersPage().number, pageSize())"
+  ></button>
+</section>
+
+<p-card styleClass="suppliers-card">
+  <ng-template #title>
+    <div class="suppliers-card__title">
+      <div>
+        <h2>Fornecedores cadastrados</h2>
+        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
+      </div>
+    </div>
+  </ng-template>
+
+  <p-table
+    [value]="suppliers()"
+    [loading]="isLoading()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    [tableStyle]="{ 'min-width': '72rem' }"
+    dataKey="id"
+    responsiveLayout="scroll"
+    (onLazyLoad)="onPageChange($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="name">Nome <p-sortIcon field="name" /></th>
+        <th pSortableColumn="contactName">Contato <p-sortIcon field="contactName" /></th>
+        <th pSortableColumn="phoneNumber">Telefone <p-sortIcon field="phoneNumber" /></th>
+        <th pSortableColumn="email">E-mail <p-sortIcon field="email" /></th>
+        <th pSortableColumn="address">Endereço <p-sortIcon field="address" /></th>
+        <th pSortableColumn="active">Status <p-sortIcon field="active" /></th>
+        <th class="actions-column">Ações</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-supplier>
+      <tr>
+        <td>
+          <div class="item-cell">
+            <strong>{{ supplier.name || 'Fornecedor não informado' }}</strong>
+            <span>#{{ supplier.id }}</span>
+          </div>
+        </td>
+        <td>{{ supplier.contactName || '-' }}</td>
+        <td>{{ supplier.phoneNumber || '-' }}</td>
+        <td>{{ supplier.email || '-' }}</td>
+        <td>{{ supplier.address || '-' }}</td>
+        <td>
+          <p-tag [severity]="supplier.active ? 'success' : 'secondary'" [value]="supplier.active ? 'Ativo' : 'Inativo'" />
+        </td>
+        <td>
+          <div class="row-actions">
+            <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openSupplierDetails(supplier)"></button>
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="showComingSoon('Excluir')"></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7">
+          <div class="empty-state">
+            <i class="pi pi-users" aria-hidden="true"></i>
+            <strong>Nenhum fornecedor encontrado</strong>
+            <span>Cadastre fornecedores para associá-los aos produtos.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
+
+<p-dialog
+  header="Detalhes do fornecedor"
+  modal
+  [visible]="isDetailsDialogVisible()"
+  [style]="{ width: 'min(42rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isDetailsDialogVisible.set($event)"
+>
+  @if (isDetailsLoading()) {
+    <div class="details-loading">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      <span>Carregando fornecedor...</span>
+    </div>
+  } @else if (selectedSupplier(); as supplier) {
+    <dl class="supplier-details">
+      <div>
+        <dt>Nome</dt>
+        <dd>{{ supplier.name || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Nome do contato</dt>
+        <dd>{{ supplier.contactName || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Telefone</dt>
+        <dd>{{ supplier.phoneNumber || '-' }}</dd>
+      </div>
+      <div>
+        <dt>E-mail</dt>
+        <dd>{{ supplier.email || '-' }}</dd>
+      </div>
+      <div class="supplier-details__full">
+        <dt>Endereço</dt>
+        <dd>{{ supplier.address || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <p-tag [severity]="supplier.active ? 'success' : 'secondary'" [value]="supplier.active ? 'Ativo' : 'Inativo'" />
+        </dd>
+      </div>
+      <div>
+        <dt>Criado em</dt>
+        <dd>{{ supplier.createdAt ? (supplier.createdAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Atualizado em</dt>
+        <dd>{{ supplier.updatedAt ? (supplier.updatedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+    </dl>
+  }
+</p-dialog>
