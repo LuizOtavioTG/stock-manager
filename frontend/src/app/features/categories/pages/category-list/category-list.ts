@@ -1,4 +1,3 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -10,10 +9,10 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { Page } from '../../../../models/page.model';
-import { Product } from '../../models/product.model';
-import { ProductService } from '../../services/product.service';
+import { Category } from '../../models/category.model';
+import { CategoryService } from '../../services/category.service';
 
-const EMPTY_PAGE: Page<Product> = {
+const EMPTY_PAGE: Page<Category> = {
   content: [],
   totalElements: 0,
   totalPages: 0,
@@ -25,30 +24,31 @@ const EMPTY_PAGE: Page<Product> = {
 };
 
 @Component({
-  selector: 'app-product-list',
-  imports: [ButtonModule, CardModule, CurrencyPipe, DatePipe, DialogModule, TableModule, TagModule],
-  templateUrl: './product-list.html',
-  styleUrl: './product-list.scss'
+  selector: 'app-category-list',
+  standalone: true,
+  imports: [ButtonModule, CardModule, DialogModule, TableModule, TagModule],
+  templateUrl: './category-list.html',
+  styleUrl: './category-list.scss'
 })
-export class ProductListComponent implements OnInit {
+export class CategoryListComponent implements OnInit {
+  private readonly categoryService = inject(CategoryService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly productService = inject(ProductService);
   private readonly messageService = inject(MessageService);
 
   protected readonly isLoading = signal(false);
   protected readonly pageSize = signal(10);
   protected readonly sort = signal('name,asc');
-  protected readonly productsPage = signal<Page<Product>>(EMPTY_PAGE);
-  protected readonly selectedProduct = signal<Product | null>(null);
+  protected readonly categoriesPage = signal<Page<Category>>(EMPTY_PAGE);
+  protected readonly selectedCategory = signal<Category | null>(null);
   protected readonly isDetailsDialogVisible = signal(false);
   protected readonly isDetailsLoading = signal(false);
 
-  protected readonly products = computed(() => this.productsPage().content);
-  protected readonly totalElements = computed(() => this.productsPage().totalElements);
-  protected readonly first = computed(() => this.productsPage().number * this.productsPage().size);
+  protected readonly categories = computed(() => this.categoriesPage().content);
+  protected readonly totalElements = computed(() => this.categoriesPage().totalElements);
+  protected readonly first = computed(() => this.categoriesPage().number * this.categoriesPage().size);
 
   ngOnInit(): void {
-    this.loadProducts(0, this.pageSize(), this.sort());
+    this.loadCategories(0, this.pageSize(), this.sort());
   }
 
   protected onPageChange(event: { first?: number | null; rows?: number | null; sortField?: string | string[] | null; sortOrder?: number | null }): void {
@@ -59,63 +59,53 @@ export class ProductListComponent implements OnInit {
 
     this.pageSize.set(rows);
     this.sort.set(sort);
-    this.loadProducts(page, rows, sort);
+    this.loadCategories(page, rows, sort);
   }
 
-  protected loadProducts(page: number, size: number, sort = this.sort()): void {
+  protected loadCategories(page: number, size: number, sort = this.sort()): void {
     this.isLoading.set(true);
 
-    this.productService
-      .listProducts(page, size, sort)
+    this.categoryService
+      .listCategories(page, size, sort)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (productsPage) => {
-          this.productsPage.set(productsPage);
+        next: (categoriesPage) => {
+          this.categoriesPage.set(categoriesPage);
           this.isLoading.set(false);
         },
         error: () => {
-          this.productsPage.set({ ...EMPTY_PAGE, size, number: page });
+          this.categoriesPage.set({ ...EMPTY_PAGE, size, number: page });
           this.isLoading.set(false);
           this.showLoadError();
         }
       });
   }
 
-  protected supplierSummary(product: Product): string {
-    const suppliers = product.suppliers ?? [];
+  protected childrenCount(category: Category): number {
+    return category.children?.length ?? 0;
+  }
 
-    if (!suppliers.length) {
+  protected childrenSummary(category: Category | null): string {
+    const children = category?.children ?? [];
+
+    if (!children.length) {
       return '-';
     }
 
-    if (suppliers.length === 1) {
-      return suppliers[0].name;
-    }
-
-    return `${suppliers[0].name} +${suppliers.length - 1}`;
+    return children.map((child) => child.name).join(', ');
   }
 
-  protected supplierList(product: Product | null): string {
-    const suppliers = product?.suppliers ?? [];
-
-    if (!suppliers.length) {
-      return '-';
-    }
-
-    return suppliers.map((supplier) => supplier.name).join(', ');
-  }
-
-  protected openProductDetails(product: Product): void {
+  protected openCategoryDetails(category: Category): void {
     this.isDetailsDialogVisible.set(true);
     this.isDetailsLoading.set(true);
-    this.selectedProduct.set(null);
+    this.selectedCategory.set(null);
 
-    this.productService
-      .getProductById(product.id)
+    this.categoryService
+      .getCategoryById(category.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (productDetail) => {
-          this.selectedProduct.set(productDetail);
+        next: (categoryDetail) => {
+          this.selectedCategory.set(categoryDetail);
           this.isDetailsLoading.set(false);
         },
         error: () => {
@@ -146,8 +136,8 @@ export class ProductListComponent implements OnInit {
   private showLoadError(): void {
     this.messageService.add({
       severity: 'error',
-      summary: 'Erro ao carregar produtos',
-      detail: 'Não foi possível buscar a lista de produtos. Verifique se a API está disponível.',
+      summary: 'Erro ao carregar categorias',
+      detail: 'Não foi possível buscar as categorias cadastradas. Verifique se a API está disponível.',
       life: 5000
     });
   }
@@ -155,8 +145,8 @@ export class ProductListComponent implements OnInit {
   private showDetailsLoadError(): void {
     this.messageService.add({
       severity: 'error',
-      summary: 'Erro ao carregar produto',
-      detail: 'Não foi possível buscar os detalhes do produto. Verifique se a API está disponível.',
+      summary: 'Erro ao carregar categoria',
+      detail: 'Não foi possível buscar os detalhes da categoria. Verifique se a API está disponível.',
       life: 5000
     });
   }

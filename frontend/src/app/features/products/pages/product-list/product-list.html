@@ -4,19 +4,16 @@
     <h1>Produtos</h1>
   </div>
 
-  <div class="heading-actions">
-    <button
-      pButton
-      type="button"
-      severity="secondary"
-      outlined
-      icon="pi pi-refresh"
-      label="Atualizar"
-      [loading]="isLoading()"
-      (click)="loadProducts(productsPage().number, pageSize())"
-    ></button>
-    <button pButton type="button" icon="pi pi-plus" label="Novo produto" (click)="showComingSoon('Novo produto')"></button>
-  </div>
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    outlined
+    icon="pi pi-refresh"
+    label="Atualizar"
+    [loading]="isLoading()"
+    (click)="loadProducts(productsPage().number, pageSize())"
+  ></button>
 </section>
 
 <p-card styleClass="products-card">
@@ -45,15 +42,14 @@
   >
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="name">Produto <p-sortIcon field="name" /></th>
         <th pSortableColumn="sku">SKU <p-sortIcon field="sku" /></th>
+        <th pSortableColumn="name">Nome <p-sortIcon field="name" /></th>
         <th pSortableColumn="brand">Marca <p-sortIcon field="brand" /></th>
         <th pSortableColumn="category.name">Categoria <p-sortIcon field="category.name" /></th>
-        <th pSortableColumn="unitOfMeasure">Unidade <p-sortIcon field="unitOfMeasure" /></th>
         <th>Fornecedores</th>
-        <th pSortableColumn="costPrice" class="numeric-column">Custo <p-sortIcon field="costPrice" /></th>
-        <th pSortableColumn="salePrice" class="numeric-column">Venda <p-sortIcon field="salePrice" /></th>
-        <th pSortableColumn="expirationDate">Validade <p-sortIcon field="expirationDate" /></th>
+        <th pSortableColumn="unitOfMeasure">Unidade <p-sortIcon field="unitOfMeasure" /></th>
+        <th pSortableColumn="costPrice" class="numeric-column">Preço de custo <p-sortIcon field="costPrice" /></th>
+        <th pSortableColumn="salePrice" class="numeric-column">Preço de venda <p-sortIcon field="salePrice" /></th>
         <th pSortableColumn="active">Status <p-sortIcon field="active" /></th>
         <th class="actions-column">Ações</th>
       </tr>
@@ -61,27 +57,27 @@
 
     <ng-template pTemplate="body" let-product>
       <tr>
+        <td>{{ product.sku || '-' }}</td>
         <td>
           <div class="item-cell">
             <strong>{{ product.name || 'Produto não informado' }}</strong>
             <span>#{{ product.id }}</span>
           </div>
         </td>
-        <td>{{ product.sku || '-' }}</td>
         <td>{{ product.brand || '-' }}</td>
         <td>{{ product.category?.name || '-' }}</td>
-        <td>{{ product.unitOfMeasure || '-' }}</td>
         <td>{{ supplierSummary(product) }}</td>
+        <td>{{ product.unitOfMeasure || '-' }}</td>
         <td class="numeric-column">{{ product.costPrice !== null ? (product.costPrice | currency: 'BRL':'symbol':'1.2-2') : '-' }}</td>
         <td class="numeric-column">{{ product.salePrice !== null ? (product.salePrice | currency: 'BRL':'symbol':'1.2-2') : '-' }}</td>
-        <td>{{ product.expirationDate ? (product.expirationDate | date: 'dd/MM/yyyy') : '-' }}</td>
         <td>
           <p-tag [severity]="product.active ? 'success' : 'secondary'" [value]="product.active ? 'Ativo' : 'Inativo'" />
         </td>
         <td>
           <div class="row-actions">
-            <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="showComingSoon('Visualizar')"></button>
+            <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openProductDetails(product)"></button>
             <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="showComingSoon('Excluir')"></button>
           </div>
         </td>
       </tr>
@@ -89,7 +85,7 @@
 
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="11">
+        <td colspan="10">
           <div class="empty-state">
             <i class="pi pi-box" aria-hidden="true"></i>
             <strong>Nenhum produto encontrado</strong>
@@ -100,3 +96,75 @@
     </ng-template>
   </p-table>
 </p-card>
+
+<p-dialog
+  header="Detalhes do produto"
+  modal
+  [visible]="isDetailsDialogVisible()"
+  [style]="{ width: 'min(42rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isDetailsDialogVisible.set($event)"
+>
+  @if (isDetailsLoading()) {
+    <div class="details-loading">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      <span>Carregando produto...</span>
+    </div>
+  } @else if (selectedProduct(); as product) {
+    <dl class="product-details">
+      <div>
+        <dt>SKU</dt>
+        <dd>{{ product.sku || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Nome</dt>
+        <dd>{{ product.name || '-' }}</dd>
+      </div>
+      <div class="product-details__full">
+        <dt>Descrição</dt>
+        <dd>{{ product.description || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Marca</dt>
+        <dd>{{ product.brand || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Categoria</dt>
+        <dd>{{ product.category?.name || '-' }}</dd>
+      </div>
+      <div class="product-details__full">
+        <dt>Fornecedores</dt>
+        <dd>{{ supplierList(product) }}</dd>
+      </div>
+      <div>
+        <dt>Unidade de medida</dt>
+        <dd>{{ product.unitOfMeasure || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Preço de custo</dt>
+        <dd>{{ product.costPrice !== null ? (product.costPrice | currency: 'BRL':'symbol':'1.2-2') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Preço de venda</dt>
+        <dd>{{ product.salePrice !== null ? (product.salePrice | currency: 'BRL':'symbol':'1.2-2') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Data de validade</dt>
+        <dd>{{ product.expirationDate ? (product.expirationDate | date: 'dd/MM/yyyy') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <p-tag [severity]="product.active ? 'success' : 'secondary'" [value]="product.active ? 'Ativo' : 'Inativo'" />
+        </dd>
+      </div>
+      <div>
+        <dt>Criado em</dt>
+        <dd>{{ product.createdAt ? (product.createdAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Atualizado em</dt>
+        <dd>{{ product.updatedAt ? (product.updatedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+    </dl>
+  }
+</p-dialog>

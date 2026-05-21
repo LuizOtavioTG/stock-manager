@@ -1,0 +1,130 @@
+<section class="categories-heading">
+  <div>
+    <span>Cadastros</span>
+    <h1>Categorias</h1>
+  </div>
+
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    outlined
+    icon="pi pi-refresh"
+    label="Atualizar"
+    [loading]="isLoading()"
+    (click)="loadCategories(categoriesPage().number, pageSize())"
+  ></button>
+</section>
+
+<p-card styleClass="categories-card">
+  <ng-template #title>
+    <div class="categories-card__title">
+      <div>
+        <h2>Categorias cadastradas</h2>
+        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
+      </div>
+    </div>
+  </ng-template>
+
+  <p-table
+    [value]="categories()"
+    [loading]="isLoading()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    [tableStyle]="{ 'min-width': '64rem' }"
+    dataKey="id"
+    responsiveLayout="scroll"
+    (onLazyLoad)="onPageChange($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="name">Nome <p-sortIcon field="name" /></th>
+        <th pSortableColumn="description">Descrição <p-sortIcon field="description" /></th>
+        <th pSortableColumn="parent.name">Categoria pai <p-sortIcon field="parent.name" /></th>
+        <th class="numeric-column">Subcategorias</th>
+        <th pSortableColumn="active">Status <p-sortIcon field="active" /></th>
+        <th class="actions-column">Ações</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-category>
+      <tr>
+        <td>
+          <div class="item-cell">
+            <strong>{{ category.name || 'Categoria não informada' }}</strong>
+            <span>#{{ category.id }}</span>
+          </div>
+        </td>
+        <td>{{ category.description || '-' }}</td>
+        <td>{{ category.parent?.name || '-' }}</td>
+        <td class="numeric-column">{{ childrenCount(category) }}</td>
+        <td>
+          <p-tag [severity]="category.active ? 'success' : 'secondary'" [value]="category.active ? 'Ativa' : 'Inativa'" />
+        </td>
+        <td>
+          <div class="row-actions">
+            <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openCategoryDetails(category)"></button>
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="showComingSoon('Excluir')"></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6">
+          <div class="empty-state">
+            <i class="pi pi-tags" aria-hidden="true"></i>
+            <strong>Nenhuma categoria encontrada</strong>
+            <span>Cadastre categorias para organizar os produtos.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
+
+<p-dialog
+  header="Detalhes da categoria"
+  modal
+  [visible]="isDetailsDialogVisible()"
+  [style]="{ width: 'min(40rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isDetailsDialogVisible.set($event)"
+>
+  @if (isDetailsLoading()) {
+    <div class="details-loading">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      <span>Carregando categoria...</span>
+    </div>
+  } @else if (selectedCategory(); as category) {
+    <dl class="category-details">
+      <div>
+        <dt>Nome</dt>
+        <dd>{{ category.name || '-' }}</dd>
+      </div>
+      <div class="category-details__full">
+        <dt>Descrição</dt>
+        <dd>{{ category.description || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Categoria pai</dt>
+        <dd>{{ category.parent?.name || '-' }}</dd>
+      </div>
+      <div class="category-details__full">
+        <dt>Subcategorias</dt>
+        <dd>{{ childrenSummary(category) }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd>
+          <p-tag [severity]="category.active ? 'success' : 'secondary'" [value]="category.active ? 'Ativa' : 'Inativa'" />
+        </dd>
+      </div>
+    </dl>
+  }
+</p-dialog>

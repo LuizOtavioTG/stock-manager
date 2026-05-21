@@ -38,7 +38,8 @@ export const routes: Routes = [
   },
   {
     path: 'cadastros/categorias',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/categories/pages/category-list/category-list').then((m) => m.CategoryListComponent),
     data: { title: 'Categorias', section: 'Cadastros' }
   },
   {
