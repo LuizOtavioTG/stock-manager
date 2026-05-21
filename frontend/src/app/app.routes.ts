@@ -50,7 +50,10 @@ export const routes: Routes = [
   },
   {
     path: 'cadastros/locais-de-estoque',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/storage-locations/pages/storage-location-list/storage-location-list').then(
+        (m) => m.StorageLocationListComponent
+      ),
     data: { title: 'Locais de estoque', section: 'Cadastros' }
   },
   {
