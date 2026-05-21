@@ -25,7 +25,8 @@ export const routes: Routes = [
   },
   {
     path: 'estoque/alertas',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/inventory/pages/inventory-alerts/inventory-alerts').then((m) => m.InventoryAlertsComponent),
     data: { title: 'Alertas', section: 'Estoque' }
   },
   {

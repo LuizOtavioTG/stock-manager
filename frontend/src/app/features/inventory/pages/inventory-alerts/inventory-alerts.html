@@ -1,0 +1,108 @@
+<section class="alerts-heading">
+  <div>
+    <span>Estoque</span>
+    <h1>Alertas de estoque</h1>
+  </div>
+
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    outlined
+    icon="pi pi-refresh"
+    label="Atualizar"
+    [loading]="isLoading()"
+    (click)="loadAlerts(selectedType(), alertsPage().number, pageSize())"
+  ></button>
+</section>
+
+<section class="alert-filters" aria-label="Tipos de alerta">
+  @for (option of alertOptions; track option.type) {
+    <button
+      type="button"
+      class="alert-filter"
+      [class.alert-filter--active]="selectedType() === option.type"
+      (click)="selectAlertType(option.type)"
+    >
+      <span class="alert-filter__icon" [class.alert-filter__icon--danger]="option.severity === 'danger'" [class.alert-filter__icon--warn]="option.severity === 'warn'" [class.alert-filter__icon--info]="option.severity === 'info'" [class.alert-filter__icon--secondary]="option.severity === 'secondary'">
+        <i [class]="option.icon" aria-hidden="true"></i>
+      </span>
+      <span>
+        <strong>{{ option.label }}</strong>
+        <small>{{ option.description }}</small>
+      </span>
+    </button>
+  }
+</section>
+
+<p-card styleClass="alerts-card">
+  <ng-template #title>
+    <div class="alerts-card__title">
+      <div>
+        <h2>{{ selectedOption().label }}</h2>
+        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
+      </div>
+      <p-tag [severity]="selectedOption().severity" [value]="selectedOption().label" />
+    </div>
+  </ng-template>
+
+  <p-table
+    [value]="items()"
+    [loading]="isLoading()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    [tableStyle]="{ 'min-width': '64rem' }"
+    dataKey="id"
+    responsiveLayout="scroll"
+    (onLazyLoad)="onPageChange($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Produto</th>
+        <th>Local</th>
+        <th class="numeric-column">Qtd.</th>
+        <th class="numeric-column">Mín.</th>
+        <th class="numeric-column">Reposição</th>
+        <th class="numeric-column">Máx.</th>
+        <th>Status</th>
+        <th class="numeric-column">Sugestão</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+      <tr>
+        <td>
+          <div class="item-cell">
+            <strong>{{ item.productName || 'Produto não informado' }}</strong>
+            <span>#{{ item.productId || '-' }}</span>
+          </div>
+        </td>
+        <td>{{ item.storageLocationName || 'Local não informado' }}</td>
+        <td class="numeric-column">{{ item.quantity }}</td>
+        <td class="numeric-column">{{ item.minimumStock }}</td>
+        <td class="numeric-column">{{ item.reorderPoint }}</td>
+        <td class="numeric-column">{{ item.maximumStock }}</td>
+        <td>
+          <p-tag [severity]="statusSeverity(item.stockStatus)" [value]="statusLabel(item.stockStatus)" />
+        </td>
+        <td class="numeric-column">{{ item.suggestedReorderQuantity }}</td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8">
+          <div class="empty-state">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            <strong>Nenhum alerta encontrado</strong>
+            <span>Não há registros para o tipo selecionado.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
