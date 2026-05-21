@@ -3,12 +3,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { Page } from '../../../../models/page.model';
+import {
+  PaginatedListBodyDirective,
+  PaginatedListColumn,
+  PaginatedListComponent,
+  PaginatedListEmptyDirective
+} from '../../../../shared/components/paginated-list/paginated-list';
 import { Category } from '../../models/category.model';
 import { CategoryService } from '../../services/category.service';
 
@@ -26,7 +31,15 @@ const EMPTY_PAGE: Page<Category> = {
 @Component({
   selector: 'app-category-list',
   standalone: true,
-  imports: [ButtonModule, CardModule, DialogModule, TableModule, TagModule],
+  imports: [
+    ButtonModule,
+    DialogModule,
+    PaginatedListBodyDirective,
+    PaginatedListComponent,
+    PaginatedListEmptyDirective,
+    TableModule,
+    TagModule
+  ],
   templateUrl: './category-list.html',
   styleUrl: './category-list.scss'
 })
@@ -34,6 +47,15 @@ export class CategoryListComponent implements OnInit {
   private readonly categoryService = inject(CategoryService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly messageService = inject(MessageService);
+
+  protected readonly columns: PaginatedListColumn[] = [
+    { label: 'Nome', field: 'name' },
+    { label: 'Descrição', field: 'description' },
+    { label: 'Categoria pai', field: 'parent.name' },
+    { label: 'Subcategorias', sortable: false, styleClass: 'numeric-column' },
+    { label: 'Status', field: 'active' },
+    { label: 'Ações', sortable: false, styleClass: 'actions-column' }
+  ];
 
   protected readonly isLoading = signal(false);
   protected readonly pageSize = signal(10);

@@ -1,60 +1,18 @@
-<section class="inventory-heading">
-  <div>
-    <span>Estoque</span>
-    <h1>Inventário</h1>
-  </div>
-
-  <button
-    pButton
-    type="button"
-    severity="secondary"
-    outlined
-    icon="pi pi-refresh"
-    label="Atualizar"
-    [loading]="isLoading()"
-    (click)="loadInventory(inventoryPage().number, pageSize())"
-  ></button>
-</section>
-
-<p-card styleClass="inventory-card">
-  <ng-template #title>
-    <div class="inventory-card__title">
-      <div>
-        <h2>Itens de inventário</h2>
-        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
-      </div>
-    </div>
-  </ng-template>
-
-  <p-table
-    [value]="items()"
-    [loading]="isLoading()"
-    [lazy]="true"
-    [paginator]="true"
-    [rows]="pageSize()"
-    [first]="first()"
-    [totalRecords]="totalElements()"
-    [rowsPerPageOptions]="[10, 20, 50]"
-    [tableStyle]="{ 'min-width': '76rem' }"
-    dataKey="id"
-    responsiveLayout="scroll"
-    (onLazyLoad)="onPageChange($event)"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th pSortableColumn="productName">Produto <p-sortIcon field="productName" /></th>
-        <th pSortableColumn="storageLocationName">Local de estoque <p-sortIcon field="storageLocationName" /></th>
-        <th pSortableColumn="quantity" class="numeric-column">Quantidade <p-sortIcon field="quantity" /></th>
-        <th pSortableColumn="minimumStock" class="numeric-column">Estoque mínimo <p-sortIcon field="minimumStock" /></th>
-        <th pSortableColumn="reorderPoint" class="numeric-column">Ponto de reposição <p-sortIcon field="reorderPoint" /></th>
-        <th pSortableColumn="maximumStock" class="numeric-column">Estoque máximo <p-sortIcon field="maximumStock" /></th>
-        <th pSortableColumn="stockStatus">Status <p-sortIcon field="stockStatus" /></th>
-        <th class="numeric-column">Reposição sugerida</th>
-        <th class="actions-column">Ações</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-item>
+<app-paginated-list
+  section="Estoque"
+  pageTitle="Inventário"
+  cardTitle="Itens de inventário"
+  [value]="items()"
+  [loading]="isLoading()"
+  [rows]="pageSize()"
+  [first]="first()"
+  [totalRecords]="totalElements()"
+  [tableStyle]="{ 'min-width': '76rem' }"
+  [columns]="columns"
+  (refresh)="loadInventory(inventoryPage().number, pageSize())"
+  (lazyLoad)="onPageChange($event)"
+>
+    <ng-template appPaginatedListBody let-item>
       <tr>
         <td>
           <div class="item-cell">
@@ -86,7 +44,7 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="emptymessage">
+    <ng-template appPaginatedListEmpty>
       <tr>
         <td colspan="9">
           <div class="empty-state">
@@ -97,5 +55,4 @@
         </td>
       </tr>
     </ng-template>
-  </p-table>
-</p-card>
+</app-paginated-list>

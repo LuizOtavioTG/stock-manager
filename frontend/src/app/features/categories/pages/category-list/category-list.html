@@ -1,57 +1,18 @@
-<section class="categories-heading">
-  <div>
-    <span>Cadastros</span>
-    <h1>Categorias</h1>
-  </div>
-
-  <button
-    pButton
-    type="button"
-    severity="secondary"
-    outlined
-    icon="pi pi-refresh"
-    label="Atualizar"
-    [loading]="isLoading()"
-    (click)="loadCategories(categoriesPage().number, pageSize())"
-  ></button>
-</section>
-
-<p-card styleClass="categories-card">
-  <ng-template #title>
-    <div class="categories-card__title">
-      <div>
-        <h2>Categorias cadastradas</h2>
-        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
-      </div>
-    </div>
-  </ng-template>
-
-  <p-table
-    [value]="categories()"
-    [loading]="isLoading()"
-    [lazy]="true"
-    [paginator]="true"
-    [rows]="pageSize()"
-    [first]="first()"
-    [totalRecords]="totalElements()"
-    [rowsPerPageOptions]="[10, 20, 50]"
-    [tableStyle]="{ 'min-width': '64rem' }"
-    dataKey="id"
-    responsiveLayout="scroll"
-    (onLazyLoad)="onPageChange($event)"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th pSortableColumn="name">Nome <p-sortIcon field="name" /></th>
-        <th pSortableColumn="description">Descrição <p-sortIcon field="description" /></th>
-        <th pSortableColumn="parent.name">Categoria pai <p-sortIcon field="parent.name" /></th>
-        <th class="numeric-column">Subcategorias</th>
-        <th pSortableColumn="active">Status <p-sortIcon field="active" /></th>
-        <th class="actions-column">Ações</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-category>
+<app-paginated-list
+  section="Cadastros"
+  pageTitle="Categorias"
+  cardTitle="Categorias cadastradas"
+  [value]="categories()"
+  [loading]="isLoading()"
+  [rows]="pageSize()"
+  [first]="first()"
+  [totalRecords]="totalElements()"
+  [tableStyle]="{ 'min-width': '64rem' }"
+  [columns]="columns"
+  (refresh)="loadCategories(categoriesPage().number, pageSize())"
+  (lazyLoad)="onPageChange($event)"
+>
+    <ng-template appPaginatedListBody let-category>
       <tr>
         <td>
           <div class="item-cell">
@@ -75,7 +36,7 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="emptymessage">
+    <ng-template appPaginatedListEmpty>
       <tr>
         <td colspan="6">
           <div class="empty-state">
@@ -86,8 +47,7 @@
         </td>
       </tr>
     </ng-template>
-  </p-table>
-</p-card>
+</app-paginated-list>
 
 <p-dialog
   header="Detalhes da categoria"

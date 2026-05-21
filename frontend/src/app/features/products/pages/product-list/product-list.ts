@@ -4,12 +4,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { Page } from '../../../../models/page.model';
+import {
+  PaginatedListBodyDirective,
+  PaginatedListColumn,
+  PaginatedListComponent,
+  PaginatedListEmptyDirective
+} from '../../../../shared/components/paginated-list/paginated-list';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
 
@@ -26,7 +31,17 @@ const EMPTY_PAGE: Page<Product> = {
 
 @Component({
   selector: 'app-product-list',
-  imports: [ButtonModule, CardModule, CurrencyPipe, DatePipe, DialogModule, TableModule, TagModule],
+  imports: [
+    ButtonModule,
+    CurrencyPipe,
+    DatePipe,
+    DialogModule,
+    PaginatedListBodyDirective,
+    PaginatedListComponent,
+    PaginatedListEmptyDirective,
+    TableModule,
+    TagModule
+  ],
   templateUrl: './product-list.html',
   styleUrl: './product-list.scss'
 })
@@ -34,6 +49,19 @@ export class ProductListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly productService = inject(ProductService);
   private readonly messageService = inject(MessageService);
+
+  protected readonly columns: PaginatedListColumn[] = [
+    { label: 'SKU', field: 'sku' },
+    { label: 'Nome', field: 'name' },
+    { label: 'Marca', field: 'brand' },
+    { label: 'Categoria', field: 'category.name' },
+    { label: 'Fornecedores', sortable: false },
+    { label: 'Unidade', field: 'unitOfMeasure' },
+    { label: 'Preço de custo', field: 'costPrice', styleClass: 'numeric-column' },
+    { label: 'Preço de venda', field: 'salePrice', styleClass: 'numeric-column' },
+    { label: 'Status', field: 'active' },
+    { label: 'Ações', sortable: false, styleClass: 'actions-column' }
+  ];
 
   protected readonly isLoading = signal(false);
   protected readonly pageSize = signal(10);

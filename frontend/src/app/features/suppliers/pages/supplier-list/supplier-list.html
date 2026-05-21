@@ -1,58 +1,18 @@
-<section class="suppliers-heading">
-  <div>
-    <span>Cadastros</span>
-    <h1>Fornecedores</h1>
-  </div>
-
-  <button
-    pButton
-    type="button"
-    severity="secondary"
-    outlined
-    icon="pi pi-refresh"
-    label="Atualizar"
-    [loading]="isLoading()"
-    (click)="loadSuppliers(suppliersPage().number, pageSize())"
-  ></button>
-</section>
-
-<p-card styleClass="suppliers-card">
-  <ng-template #title>
-    <div class="suppliers-card__title">
-      <div>
-        <h2>Fornecedores cadastrados</h2>
-        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
-      </div>
-    </div>
-  </ng-template>
-
-  <p-table
-    [value]="suppliers()"
-    [loading]="isLoading()"
-    [lazy]="true"
-    [paginator]="true"
-    [rows]="pageSize()"
-    [first]="first()"
-    [totalRecords]="totalElements()"
-    [rowsPerPageOptions]="[10, 20, 50]"
-    [tableStyle]="{ 'min-width': '72rem' }"
-    dataKey="id"
-    responsiveLayout="scroll"
-    (onLazyLoad)="onPageChange($event)"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th pSortableColumn="name">Nome <p-sortIcon field="name" /></th>
-        <th pSortableColumn="contactName">Contato <p-sortIcon field="contactName" /></th>
-        <th pSortableColumn="phoneNumber">Telefone <p-sortIcon field="phoneNumber" /></th>
-        <th pSortableColumn="email">E-mail <p-sortIcon field="email" /></th>
-        <th pSortableColumn="address">Endereço <p-sortIcon field="address" /></th>
-        <th pSortableColumn="active">Status <p-sortIcon field="active" /></th>
-        <th class="actions-column">Ações</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-supplier>
+<app-paginated-list
+  section="Cadastros"
+  pageTitle="Fornecedores"
+  cardTitle="Fornecedores cadastrados"
+  [value]="suppliers()"
+  [loading]="isLoading()"
+  [rows]="pageSize()"
+  [first]="first()"
+  [totalRecords]="totalElements()"
+  [tableStyle]="{ 'min-width': '72rem' }"
+  [columns]="columns"
+  (refresh)="loadSuppliers(suppliersPage().number, pageSize())"
+  (lazyLoad)="onPageChange($event)"
+>
+    <ng-template appPaginatedListBody let-supplier>
       <tr>
         <td>
           <div class="item-cell">
@@ -77,7 +37,7 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="emptymessage">
+    <ng-template appPaginatedListEmpty>
       <tr>
         <td colspan="7">
           <div class="empty-state">
@@ -88,8 +48,7 @@
         </td>
       </tr>
     </ng-template>
-  </p-table>
-</p-card>
+</app-paginated-list>
 
 <p-dialog
   header="Detalhes do fornecedor"

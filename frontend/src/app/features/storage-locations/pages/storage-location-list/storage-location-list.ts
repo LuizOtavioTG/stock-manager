@@ -4,12 +4,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { Page } from '../../../../models/page.model';
+import {
+  PaginatedListBodyDirective,
+  PaginatedListColumn,
+  PaginatedListComponent,
+  PaginatedListEmptyDirective
+} from '../../../../shared/components/paginated-list/paginated-list';
 import { StorageLocation } from '../../models/storage-location.model';
 import { StorageLocationService } from '../../services/storage-location.service';
 
@@ -27,7 +32,17 @@ const EMPTY_PAGE: Page<StorageLocation> = {
 @Component({
   selector: 'app-storage-location-list',
   standalone: true,
-  imports: [ButtonModule, CardModule, DatePipe, DecimalPipe, DialogModule, TableModule, TagModule],
+  imports: [
+    ButtonModule,
+    DatePipe,
+    DecimalPipe,
+    DialogModule,
+    PaginatedListBodyDirective,
+    PaginatedListComponent,
+    PaginatedListEmptyDirective,
+    TableModule,
+    TagModule
+  ],
   templateUrl: './storage-location-list.html',
   styleUrl: './storage-location-list.scss'
 })
@@ -35,6 +50,16 @@ export class StorageLocationListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly messageService = inject(MessageService);
   private readonly storageLocationService = inject(StorageLocationService);
+
+  protected readonly columns: PaginatedListColumn[] = [
+    { label: 'Nome', field: 'name' },
+    { label: 'Tipo', field: 'type' },
+    { label: 'Responsável', field: 'responsibleName' },
+    { label: 'Capacidade', field: 'capacity', styleClass: 'numeric-column' },
+    { label: 'Local padrão', field: 'defaultLocation' },
+    { label: 'Contato', sortable: false },
+    { label: 'Ações', sortable: false, styleClass: 'actions-column' }
+  ];
 
   protected readonly isLoading = signal(false);
   protected readonly pageSize = signal(10);

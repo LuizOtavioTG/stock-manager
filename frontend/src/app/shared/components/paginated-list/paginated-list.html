@@ -1,0 +1,73 @@
+<section class="list-heading">
+  <div>
+    <span>{{ section() }}</span>
+    <h1>{{ pageTitle() }}</h1>
+  </div>
+
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    outlined
+    icon="pi pi-refresh"
+    label="Atualizar"
+    [loading]="loading()"
+    (click)="refresh.emit()"
+  ></button>
+</section>
+
+<p-card styleClass="paginated-list-card">
+  <ng-template #title>
+    <div class="paginated-list-card__title">
+      <div>
+        <h2>{{ cardTitle() }}</h2>
+        <span>{{ totalRecords() }} registro(s) encontrado(s)</span>
+      </div>
+    </div>
+  </ng-template>
+
+  <p-table
+    [value]="value()"
+    [loading]="loading()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="rows()"
+    [first]="first()"
+    [totalRecords]="totalRecords()"
+    [rowsPerPageOptions]="rowsPerPageOptions()"
+    [tableStyle]="tableStyle()"
+    [dataKey]="dataKey()"
+    responsiveLayout="scroll"
+    (onLazyLoad)="lazyLoad.emit($event)"
+  >
+    <ng-template pTemplate="header">
+      @if (columns().length) {
+        <tr>
+          @for (column of columns(); track column.label) {
+            @if (column.field && column.sortable !== false) {
+              <th [class]="column.styleClass || ''" [pSortableColumn]="column.field">
+                {{ column.label }} <p-sortIcon [field]="column.field" />
+              </th>
+            } @else {
+              <th [class]="column.styleClass || ''">{{ column.label }}</th>
+            }
+          }
+        </tr>
+      } @else if (headerTemplate) {
+        <ng-container *ngTemplateOutlet="headerTemplate.templateRef"></ng-container>
+      }
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+      @if (bodyTemplate) {
+        <ng-container *ngTemplateOutlet="bodyTemplate.templateRef; context: bodyContext(item)"></ng-container>
+      }
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      @if (emptyTemplate) {
+        <ng-container *ngTemplateOutlet="emptyTemplate.templateRef"></ng-container>
+      }
+    </ng-template>
+  </p-table>
+</p-card>

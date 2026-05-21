@@ -1,58 +1,18 @@
-<section class="storage-locations-heading">
-  <div>
-    <span>Cadastros</span>
-    <h1>Locais de estoque</h1>
-  </div>
-
-  <button
-    pButton
-    type="button"
-    severity="secondary"
-    outlined
-    icon="pi pi-refresh"
-    label="Atualizar"
-    [loading]="isLoading()"
-    (click)="loadStorageLocations(storageLocationsPage().number, pageSize())"
-  ></button>
-</section>
-
-<p-card styleClass="storage-locations-card">
-  <ng-template #title>
-    <div class="storage-locations-card__title">
-      <div>
-        <h2>Locais cadastrados</h2>
-        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
-      </div>
-    </div>
-  </ng-template>
-
-  <p-table
-    [value]="storageLocations()"
-    [loading]="isLoading()"
-    [lazy]="true"
-    [paginator]="true"
-    [rows]="pageSize()"
-    [first]="first()"
-    [totalRecords]="totalElements()"
-    [rowsPerPageOptions]="[10, 20, 50]"
-    [tableStyle]="{ 'min-width': '74rem' }"
-    dataKey="id"
-    responsiveLayout="scroll"
-    (onLazyLoad)="onPageChange($event)"
-  >
-    <ng-template pTemplate="header">
-      <tr>
-        <th pSortableColumn="name">Nome <p-sortIcon field="name" /></th>
-        <th pSortableColumn="type">Tipo <p-sortIcon field="type" /></th>
-        <th pSortableColumn="responsibleName">Responsável <p-sortIcon field="responsibleName" /></th>
-        <th pSortableColumn="capacity" class="numeric-column">Capacidade <p-sortIcon field="capacity" /></th>
-        <th pSortableColumn="defaultLocation">Local padrão <p-sortIcon field="defaultLocation" /></th>
-        <th>Contato</th>
-        <th class="actions-column">Ações</th>
-      </tr>
-    </ng-template>
-
-    <ng-template pTemplate="body" let-storageLocation>
+<app-paginated-list
+  section="Cadastros"
+  pageTitle="Locais de estoque"
+  cardTitle="Locais cadastrados"
+  [value]="storageLocations()"
+  [loading]="isLoading()"
+  [rows]="pageSize()"
+  [first]="first()"
+  [totalRecords]="totalElements()"
+  [tableStyle]="{ 'min-width': '74rem' }"
+  [columns]="columns"
+  (refresh)="loadStorageLocations(storageLocationsPage().number, pageSize())"
+  (lazyLoad)="onPageChange($event)"
+>
+    <ng-template appPaginatedListBody let-storageLocation>
       <tr>
         <td>
           <div class="item-cell">
@@ -82,7 +42,7 @@
       </tr>
     </ng-template>
 
-    <ng-template pTemplate="emptymessage">
+    <ng-template appPaginatedListEmpty>
       <tr>
         <td colspan="7">
           <div class="empty-state">
@@ -93,8 +53,7 @@
         </td>
       </tr>
     </ng-template>
-  </p-table>
-</p-card>
+</app-paginated-list>
 
 <p-dialog
   header="Detalhes do local de estoque"

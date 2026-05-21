@@ -3,11 +3,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { Page } from '../../../../models/page.model';
+import {
+  PaginatedListBodyDirective,
+  PaginatedListColumn,
+  PaginatedListComponent,
+  PaginatedListEmptyDirective
+} from '../../../../shared/components/paginated-list/paginated-list';
 import { InventoryItem, StockStatus } from '../../models/inventory-item.model';
 import { InventoryService } from '../../services/inventory.service';
 
@@ -24,7 +29,14 @@ const EMPTY_PAGE: Page<InventoryItem> = {
 
 @Component({
   selector: 'app-inventory-list',
-  imports: [ButtonModule, CardModule, TableModule, TagModule],
+  imports: [
+    ButtonModule,
+    PaginatedListBodyDirective,
+    PaginatedListComponent,
+    PaginatedListEmptyDirective,
+    TableModule,
+    TagModule
+  ],
   templateUrl: './inventory-list.html',
   styleUrl: './inventory-list.scss'
 })
@@ -32,6 +44,18 @@ export class InventoryListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly inventoryService = inject(InventoryService);
   private readonly messageService = inject(MessageService);
+
+  protected readonly columns: PaginatedListColumn[] = [
+    { label: 'Produto', field: 'productName' },
+    { label: 'Local de estoque', field: 'storageLocationName' },
+    { label: 'Quantidade', field: 'quantity', styleClass: 'numeric-column' },
+    { label: 'Estoque mínimo', field: 'minimumStock', styleClass: 'numeric-column' },
+    { label: 'Ponto de reposição', field: 'reorderPoint', styleClass: 'numeric-column' },
+    { label: 'Estoque máximo', field: 'maximumStock', styleClass: 'numeric-column' },
+    { label: 'Status', field: 'stockStatus' },
+    { label: 'Reposição sugerida', sortable: false, styleClass: 'numeric-column' },
+    { label: 'Ações', sortable: false, styleClass: 'actions-column' }
+  ];
 
   protected readonly isLoading = signal(false);
   protected readonly pageSize = signal(10);

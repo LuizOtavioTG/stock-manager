@@ -4,12 +4,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { Page } from '../../../../models/page.model';
+import {
+  PaginatedListBodyDirective,
+  PaginatedListColumn,
+  PaginatedListComponent,
+  PaginatedListEmptyDirective
+} from '../../../../shared/components/paginated-list/paginated-list';
 import { Supplier } from '../../models/supplier.model';
 import { SupplierService } from '../../services/supplier.service';
 
@@ -27,7 +32,16 @@ const EMPTY_PAGE: Page<Supplier> = {
 @Component({
   selector: 'app-supplier-list',
   standalone: true,
-  imports: [ButtonModule, CardModule, DatePipe, DialogModule, TableModule, TagModule],
+  imports: [
+    ButtonModule,
+    DatePipe,
+    DialogModule,
+    PaginatedListBodyDirective,
+    PaginatedListComponent,
+    PaginatedListEmptyDirective,
+    TableModule,
+    TagModule
+  ],
   templateUrl: './supplier-list.html',
   styleUrl: './supplier-list.scss'
 })
@@ -35,6 +49,16 @@ export class SupplierListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly messageService = inject(MessageService);
   private readonly supplierService = inject(SupplierService);
+
+  protected readonly columns: PaginatedListColumn[] = [
+    { label: 'Nome', field: 'name' },
+    { label: 'Contato', field: 'contactName' },
+    { label: 'Telefone', field: 'phoneNumber' },
+    { label: 'E-mail', field: 'email' },
+    { label: 'Endereço', field: 'address' },
+    { label: 'Status', field: 'active' },
+    { label: 'Ações', sortable: false, styleClass: 'actions-column' }
+  ];
 
   protected readonly isLoading = signal(false);
   protected readonly pageSize = signal(10);
