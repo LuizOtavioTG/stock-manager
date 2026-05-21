@@ -1,6 +1,8 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { MessageService } from 'primeng/api';
+
 import { InventoryAlertsSummary } from '../../features/inventory/models/inventory-alerts-summary.model';
 import { InventoryAlertsService } from '../../features/inventory/services/inventory-alerts.service';
 import { StatCardComponent, StatCardSeverity } from '../../shared/components/stat-card/stat-card';
@@ -39,9 +41,9 @@ const EMPTY_SUMMARY: InventoryAlertsSummary = {
 export class DashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly inventoryAlertsService = inject(InventoryAlertsService);
+  private readonly messageService = inject(MessageService);
 
   protected readonly isLoading = signal(true);
-  protected readonly errorMessage = signal<string | null>(null);
   protected readonly summary = signal<InventoryAlertsSummary>(EMPTY_SUMMARY);
 
   private readonly statConfigs: DashboardStatConfig[] = [
@@ -92,7 +94,6 @@ export class DashboardComponent implements OnInit {
 
   protected loadSummary(): void {
     this.isLoading.set(true);
-    this.errorMessage.set(null);
 
     this.inventoryAlertsService
       .getSummary()
@@ -104,9 +105,18 @@ export class DashboardComponent implements OnInit {
         },
         error: () => {
           this.summary.set(EMPTY_SUMMARY);
-          this.errorMessage.set('Não foi possível carregar os alertas de estoque.');
           this.isLoading.set(false);
+          this.showLoadError();
         }
       });
+  }
+
+  private showLoadError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao carregar alertas',
+      detail: 'Não foi possível buscar o resumo do inventário. Verifique se a API está disponível.',
+      life: 5000
+    });
   }
 }

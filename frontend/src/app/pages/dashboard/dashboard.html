@@ -10,16 +10,6 @@
   </div>
 </section>
 
-@if (errorMessage()) {
-  <section class="dashboard-alert" role="alert">
-    <div>
-      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-      <span>{{ errorMessage() }}</span>
-    </div>
-    <button type="button" (click)="loadSummary()">Tentar novamente</button>
-  </section>
-}
-
 <section class="dashboard-grid" aria-label="Indicadores de estoque">
   @for (stat of stats(); track stat.title) {
     <app-stat-card

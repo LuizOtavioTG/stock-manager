@@ -35,6 +35,10 @@ body {
   color: var(--p-surface-900);
 }
 
+.p-toast-message-error .p-toast-detail {
+  color: var(--p-red-700);
+}
+
 body.blocked-scroll {
   overflow: hidden;
 }
