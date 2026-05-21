@@ -1,0 +1,102 @@
+<section class="products-heading">
+  <div>
+    <span>Cadastros</span>
+    <h1>Produtos</h1>
+  </div>
+
+  <div class="heading-actions">
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      outlined
+      icon="pi pi-refresh"
+      label="Atualizar"
+      [loading]="isLoading()"
+      (click)="loadProducts(productsPage().number, pageSize())"
+    ></button>
+    <button pButton type="button" icon="pi pi-plus" label="Novo produto" (click)="showComingSoon('Novo produto')"></button>
+  </div>
+</section>
+
+<p-card styleClass="products-card">
+  <ng-template #title>
+    <div class="products-card__title">
+      <div>
+        <h2>Produtos cadastrados</h2>
+        <span>{{ totalElements() }} registro(s) encontrado(s)</span>
+      </div>
+    </div>
+  </ng-template>
+
+  <p-table
+    [value]="products()"
+    [loading]="isLoading()"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    [tableStyle]="{ 'min-width': '78rem' }"
+    dataKey="id"
+    responsiveLayout="scroll"
+    (onLazyLoad)="onPageChange($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="name">Produto <p-sortIcon field="name" /></th>
+        <th pSortableColumn="sku">SKU <p-sortIcon field="sku" /></th>
+        <th pSortableColumn="brand">Marca <p-sortIcon field="brand" /></th>
+        <th pSortableColumn="category.name">Categoria <p-sortIcon field="category.name" /></th>
+        <th pSortableColumn="unitOfMeasure">Unidade <p-sortIcon field="unitOfMeasure" /></th>
+        <th>Fornecedores</th>
+        <th pSortableColumn="costPrice" class="numeric-column">Custo <p-sortIcon field="costPrice" /></th>
+        <th pSortableColumn="salePrice" class="numeric-column">Venda <p-sortIcon field="salePrice" /></th>
+        <th pSortableColumn="expirationDate">Validade <p-sortIcon field="expirationDate" /></th>
+        <th pSortableColumn="active">Status <p-sortIcon field="active" /></th>
+        <th class="actions-column">Ações</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-product>
+      <tr>
+        <td>
+          <div class="item-cell">
+            <strong>{{ product.name || 'Produto não informado' }}</strong>
+            <span>#{{ product.id }}</span>
+          </div>
+        </td>
+        <td>{{ product.sku || '-' }}</td>
+        <td>{{ product.brand || '-' }}</td>
+        <td>{{ product.category?.name || '-' }}</td>
+        <td>{{ product.unitOfMeasure || '-' }}</td>
+        <td>{{ supplierSummary(product) }}</td>
+        <td class="numeric-column">{{ product.costPrice !== null ? (product.costPrice | currency: 'BRL':'symbol':'1.2-2') : '-' }}</td>
+        <td class="numeric-column">{{ product.salePrice !== null ? (product.salePrice | currency: 'BRL':'symbol':'1.2-2') : '-' }}</td>
+        <td>{{ product.expirationDate ? (product.expirationDate | date: 'dd/MM/yyyy') : '-' }}</td>
+        <td>
+          <p-tag [severity]="product.active ? 'success' : 'secondary'" [value]="product.active ? 'Ativo' : 'Inativo'" />
+        </td>
+        <td>
+          <div class="row-actions">
+            <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="showComingSoon('Visualizar')"></button>
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="11">
+          <div class="empty-state">
+            <i class="pi pi-box" aria-hidden="true"></i>
+            <strong>Nenhum produto encontrado</strong>
+            <span>Cadastre produtos para começar a controlar o estoque.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>

@@ -32,7 +32,8 @@ export const routes: Routes = [
   },
   {
     path: 'cadastros/produtos',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/products/pages/product-list/product-list').then((m) => m.ProductListComponent),
     data: { title: 'Produtos', section: 'Cadastros' }
   },
   {
