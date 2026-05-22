@@ -1,3 +1,54 @@
+<form class="filters-panel" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+  <label class="filter-field">
+    <span>Produto</span>
+    <p-select
+      formControlName="productId"
+      [options]="productOptions()"
+      optionLabel="label"
+      optionValue="id"
+      placeholder="Todos"
+      appendTo="body"
+      [showClear]="true"
+      [loading]="isLoadingProductOptions()"
+      (onChange)="onProductFilterChange()"
+    />
+  </label>
+
+  <label class="filter-field">
+    <span>Local de estoque</span>
+    <p-select
+      formControlName="storageLocationId"
+      [options]="storageLocationOptions()"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Todos"
+      appendTo="body"
+      [showClear]="true"
+      [loading]="isLoadingStorageLocationOptions()"
+      (onChange)="onStorageLocationFilterChange()"
+    />
+  </label>
+
+  <label class="filter-field">
+    <span>Tipo</span>
+    <p-select
+      formControlName="movementType"
+      [options]="movementTypeOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos"
+      appendTo="body"
+      [showClear]="true"
+      (onChange)="onMovementTypeFilterChange()"
+    />
+  </label>
+
+  <div class="filter-actions">
+    <button pButton type="submit" icon="pi pi-filter" label="Aplicar filtros"></button>
+    <button pButton type="button" icon="pi pi-filter-slash" label="Limpar filtros" severity="secondary" text (click)="clearFilters()"></button>
+  </div>
+</form>
+
 <app-paginated-list
   section="Estoque"
   pageTitle="Movimentações"

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 
 import { ApiService } from '../../../core/api/api.service';
 import { Page } from '../../../models/page.model';
-import { StockMovement } from '../models/stock-movement.model';
+import { MovementType, StockMovement } from '../models/stock-movement.model';
 import {
   StockAdjustmentRequest,
   StockInboundRequest,
@@ -18,6 +18,51 @@ export class StockMovementService {
 
   listMovements(page: number, size: number, sort = 'movementDate,desc'): Observable<Page<StockMovement>> {
     return this.api.get<Page<StockMovement>>('api/stock-movements', {
+      params: {
+        page,
+        size,
+        sort
+      }
+    });
+  }
+
+  listMovementsByProduct(
+    productId: number,
+    page: number,
+    size: number,
+    sort = 'movementDate,desc'
+  ): Observable<Page<StockMovement>> {
+    return this.api.get<Page<StockMovement>>(`api/stock-movements/product/${productId}`, {
+      params: {
+        page,
+        size,
+        sort
+      }
+    });
+  }
+
+  listMovementsByStorageLocation(
+    storageLocationId: number,
+    page: number,
+    size: number,
+    sort = 'movementDate,desc'
+  ): Observable<Page<StockMovement>> {
+    return this.api.get<Page<StockMovement>>(`api/stock-movements/location/${storageLocationId}`, {
+      params: {
+        page,
+        size,
+        sort
+      }
+    });
+  }
+
+  listMovementsByType(
+    movementType: MovementType,
+    page: number,
+    size: number,
+    sort = 'movementDate,desc'
+  ): Observable<Page<StockMovement>> {
+    return this.api.get<Page<StockMovement>>(`api/stock-movements/type/${movementType}`, {
       params: {
         page,
         size,

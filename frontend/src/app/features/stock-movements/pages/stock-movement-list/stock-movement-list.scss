@@ -3,6 +3,10 @@
 .item-cell{display:grid;gap:.25rem}
 .item-cell strong{color:var(--p-surface-900)}
 .item-cell span{color:var(--p-surface-500);font-size:.85rem}
+.filters-panel{align-items:end;background:var(--p-surface-0);border:1px solid var(--p-surface-200);border-radius:8px;box-shadow:0 1px 2px rgba(15,23,42,.04);display:grid;gap:1rem;grid-template-columns:repeat(3,minmax(0,1fr)) auto;margin-bottom:1rem;padding:1rem}
+.filter-field{color:var(--p-surface-700);display:grid;font-size:.85rem;font-weight:700;gap:.45rem;min-width:0}
+.filter-field p-select{width:100%}
+.filter-actions{align-items:center;display:flex;gap:.5rem;justify-content:flex-end;white-space:nowrap}
 .toolbar-actions{align-items:center;display:flex;flex-wrap:wrap;gap:.5rem;justify-content:flex-end}
 .empty-state{align-items:center;color:var(--p-surface-500);display:grid;gap:.35rem;justify-items:center;padding:2rem 1rem;text-align:center}
 .empty-state i{color:var(--p-primary-500);font-size:1.8rem}
@@ -23,6 +27,9 @@
 .movement-details dt{color:var(--p-surface-500);font-size:.78rem;font-weight:700;text-transform:uppercase}
 .movement-details dd{color:var(--p-surface-900);font-weight:600;margin:0;overflow-wrap:anywhere}
 @media (max-width:640px){
+  .filters-panel{grid-template-columns:1fr}
+  .filter-actions{justify-content:stretch}
+  .filter-actions button{flex:1}
   .toolbar-actions{justify-content:stretch}
   .toolbar-actions button{flex:1}
   .movement-form,.movement-details{grid-template-columns:1fr}

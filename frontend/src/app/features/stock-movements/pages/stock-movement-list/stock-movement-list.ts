@@ -29,10 +29,20 @@ import { MovementType, StockMovement } from '../../models/stock-movement.model';
 import { StockMovementService } from '../../services/stock-movement.service';
 
 type MovementFormMode = 'INBOUND' | 'OUTBOUND' | 'ADJUSTMENT';
+type ActiveMovementFilter =
+  | { type: 'product'; value: number }
+  | { type: 'storageLocation'; value: number }
+  | { type: 'movementType'; value: MovementType }
+  | null;
 
 interface ProductOption {
   id: number;
   label: string;
+}
+
+interface MovementTypeOption {
+  label: string;
+  value: MovementType;
 }
 
 const EMPTY_PAGE: Page<StockMovement> = {
@@ -96,6 +106,7 @@ export class StockMovementListComponent implements OnInit {
   protected readonly sort = signal('movementDate,desc');
   protected readonly movementsPage = signal<Page<StockMovement>>(EMPTY_PAGE);
   protected readonly formMode = signal<MovementFormMode>('INBOUND');
+  protected readonly activeFilter = signal<ActiveMovementFilter>(null);
   protected readonly selectedMovement = signal<StockMovement | null>(null);
   protected readonly productOptions = signal<ProductOption[]>([]);
   protected readonly storageLocationOptions = signal<StorageLocation[]>([]);
@@ -105,6 +116,16 @@ export class StockMovementListComponent implements OnInit {
   protected readonly movements = computed(() => this.movementsPage().content);
   protected readonly totalElements = computed(() => this.movementsPage().totalElements);
   protected readonly first = computed(() => this.movementsPage().number * this.movementsPage().size);
+  protected readonly movementTypeOptions: MovementTypeOption[] = [
+    { label: 'Entrada', value: 'INBOUND' },
+    { label: 'Saída', value: 'OUTBOUND' },
+    { label: 'Ajuste', value: 'ADJUSTMENT' },
+    { label: 'Saldo inicial', value: 'INITIAL_BALANCE' },
+    { label: 'Retorno', value: 'RETURN' },
+    { label: 'Perda', value: 'LOSS' },
+    { label: 'Danificado', value: 'DAMAGED' },
+    { label: 'Transferência', value: 'TRANSFER' }
+  ];
   protected readonly formTitle = computed(() => {
     const titles: Record<MovementFormMode, string> = {
       INBOUND: 'Nova entrada',
@@ -126,8 +147,15 @@ export class StockMovementListComponent implements OnInit {
     notes: this.formBuilder.control<string | null>(null, [Validators.maxLength(500)])
   });
 
+  protected readonly filterForm = this.formBuilder.group({
+    productId: this.formBuilder.control<number | null>(null),
+    storageLocationId: this.formBuilder.control<number | null>(null),
+    movementType: this.formBuilder.control<MovementType | null>(null)
+  });
+
   ngOnInit(): void {
     this.loadMovements(0, this.pageSize(), this.sort());
+    this.loadFormOptions();
   }
 
   protected onPageChange(event: { first?: number | null; rows?: number | null; sortField?: string | string[] | null; sortOrder?: number | null }): void {
@@ -144,8 +172,7 @@ export class StockMovementListComponent implements OnInit {
   protected loadMovements(page: number, size: number, sort = this.sort()): void {
     this.isLoading.set(true);
 
-    this.stockMovementService
-      .listMovements(page, size, sort)
+    this.movementRequest(page, size, sort)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (movementsPage) => {
@@ -155,9 +182,53 @@ export class StockMovementListComponent implements OnInit {
         error: () => {
           this.movementsPage.set({ ...EMPTY_PAGE, size, number: page });
           this.isLoading.set(false);
-          this.showLoadError();
+          this.showLoadError(Boolean(this.activeFilter()));
         }
       });
+  }
+
+  protected onProductFilterChange(): void {
+    if (this.filterForm.controls.productId.value) {
+      this.filterForm.patchValue({ storageLocationId: null, movementType: null }, { emitEvent: false });
+    }
+  }
+
+  protected onStorageLocationFilterChange(): void {
+    if (this.filterForm.controls.storageLocationId.value) {
+      this.filterForm.patchValue({ productId: null, movementType: null }, { emitEvent: false });
+    }
+  }
+
+  protected onMovementTypeFilterChange(): void {
+    if (this.filterForm.controls.movementType.value) {
+      this.filterForm.patchValue({ productId: null, storageLocationId: null }, { emitEvent: false });
+    }
+  }
+
+  protected applyFilters(): void {
+    const value = this.filterForm.getRawValue();
+
+    if (value.productId) {
+      this.activeFilter.set({ type: 'product', value: value.productId });
+    } else if (value.storageLocationId) {
+      this.activeFilter.set({ type: 'storageLocation', value: value.storageLocationId });
+    } else if (value.movementType) {
+      this.activeFilter.set({ type: 'movementType', value: value.movementType });
+    } else {
+      this.activeFilter.set(null);
+    }
+
+    this.loadMovements(0, this.pageSize(), this.sort());
+  }
+
+  protected clearFilters(): void {
+    this.filterForm.reset({
+      productId: null,
+      storageLocationId: null,
+      movementType: null
+    });
+    this.activeFilter.set(null);
+    this.loadMovements(0, this.pageSize(), this.sort());
   }
 
   protected openForm(mode: MovementFormMode): void {
@@ -283,6 +354,24 @@ export class StockMovementListComponent implements OnInit {
     return `${sortField},${sortOrder === -1 ? 'desc' : 'asc'}`;
   }
 
+  private movementRequest(page: number, size: number, sort: string) {
+    const activeFilter = this.activeFilter();
+
+    if (!activeFilter) {
+      return this.stockMovementService.listMovements(page, size, sort);
+    }
+
+    if (activeFilter.type === 'product') {
+      return this.stockMovementService.listMovementsByProduct(activeFilter.value, page, size, sort);
+    }
+
+    if (activeFilter.type === 'storageLocation') {
+      return this.stockMovementService.listMovementsByStorageLocation(activeFilter.value, page, size, sort);
+    }
+
+    return this.stockMovementService.listMovementsByType(activeFilter.value, page, size, sort);
+  }
+
   private updateFormValidators(mode: MovementFormMode): void {
     const quantityValidators = mode === 'ADJUSTMENT'
       ? [Validators.required, Validators.min(0)]
@@ -399,10 +488,10 @@ export class StockMovementListComponent implements OnInit {
     });
   }
 
-  private showLoadError(): void {
+  private showLoadError(filtered: boolean): void {
     this.messageService.add({
       severity: 'error',
-      summary: 'Erro ao carregar movimentações',
+      summary: filtered ? 'Erro ao carregar movimentações filtradas' : 'Erro ao carregar movimentações',
       detail: 'Não foi possível buscar as movimentações. Verifique se a API está disponível.',
       life: 5000
     });
