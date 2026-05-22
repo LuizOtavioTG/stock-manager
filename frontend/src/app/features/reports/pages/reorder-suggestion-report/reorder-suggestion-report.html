@@ -3,7 +3,10 @@
     <span>Relatórios</span>
     <div>
       <h1>Reposição sugerida</h1>
-      <button pButton type="button" icon="pi pi-refresh" label="Atualizar" text (click)="loadReport(reportPage().number, pageSize())"></button>
+      <div class="page-actions">
+        <button pButton type="button" icon="pi pi-download" label="Exportar CSV" outlined (click)="exportCsv()"></button>
+        <button pButton type="button" icon="pi pi-refresh" label="Atualizar" text (click)="loadReport(reportPage().number, pageSize())"></button>
+      </div>
     </div>
   </header>
 

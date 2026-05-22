@@ -17,6 +17,7 @@ import {
   PaginatedListComponent,
   PaginatedListEmptyDirective
 } from '../../../../shared/components/paginated-list/paginated-list';
+import { CsvExportService } from '../../../../shared/services/csv-export.service';
 import { Product } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
 import { StorageLocation } from '../../../storage-locations/models/storage-location.model';
@@ -76,6 +77,7 @@ const EMPTY_PAGE: Page<StockMovement> = {
 })
 export class StockMovementReportComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly csvExportService = inject(CsvExportService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly messageService = inject(MessageService);
   private readonly productService = inject(ProductService);
@@ -259,6 +261,27 @@ export class StockMovementReportComponent implements OnInit {
       });
   }
 
+  protected exportCsv(): void {
+    const rows = this.movements();
+
+    if (!rows.length) {
+      this.showEmptyExportWarning();
+      return;
+    }
+
+    this.csvExportService.exportToCsv('relatorio-movimentacoes.csv', rows, [
+      { header: 'Data', value: (row) => row.movementDate },
+      { header: 'Tipo', value: (row) => this.movementLabel(row.movementType) },
+      { header: 'Produto', value: (row) => this.productLabel(row) },
+      { header: 'Local de estoque', value: (row) => row.storageLocation?.name },
+      { header: 'Quantidade', value: (row) => row.quantity },
+      { header: 'Motivo', value: (row) => row.reason },
+      { header: 'Referencia', value: (row) => row.reference },
+      { header: 'Responsavel', value: (row) => row.responsible },
+      { header: 'Observacoes', value: (row) => row.notes }
+    ]);
+  }
+
   protected movementLabel(type: MovementType): string {
     const labels: Record<MovementType, string> = {
       INBOUND: 'Entrada',
@@ -379,6 +402,15 @@ export class StockMovementReportComponent implements OnInit {
       summary: 'Erro ao carregar relatório de movimentações',
       detail: 'Não foi possível buscar as movimentações. Verifique se a API está disponível.',
       life: 5000
+    });
+  }
+
+  private showEmptyExportWarning(): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Não há dados para exportar',
+      detail: 'Carregue ou filtre dados antes de exportar o CSV.',
+      life: 3000
     });
   }
 

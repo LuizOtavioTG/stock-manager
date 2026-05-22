@@ -15,6 +15,7 @@ import {
   PaginatedListComponent,
   PaginatedListEmptyDirective
 } from '../../../../shared/components/paginated-list/paginated-list';
+import { CsvExportService } from '../../../../shared/services/csv-export.service';
 import { InventoryAlertItem, StockStatus } from '../../../inventory/models/inventory-alert-item.model';
 import { InventoryAlertsService } from '../../../inventory/services/inventory-alerts.service';
 import { Product } from '../../../products/models/product.model';
@@ -61,6 +62,7 @@ const EMPTY_PAGE: Page<InventoryAlertItem> = {
 })
 export class ReorderSuggestionReportComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly csvExportService = inject(CsvExportService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly inventoryAlertsService = inject(InventoryAlertsService);
   private readonly messageService = inject(MessageService);
@@ -176,6 +178,26 @@ export class ReorderSuggestionReportComponent implements OnInit {
       });
   }
 
+  protected exportCsv(): void {
+    const rows = this.items();
+
+    if (!rows.length) {
+      this.showEmptyExportWarning();
+      return;
+    }
+
+    this.csvExportService.exportToCsv('reposicao-sugerida.csv', rows, [
+      { header: 'Produto', value: (row) => row.productName },
+      { header: 'Local de estoque', value: (row) => row.storageLocationName },
+      { header: 'Quantidade atual', value: (row) => row.quantity },
+      { header: 'Estoque minimo', value: (row) => row.minimumStock },
+      { header: 'Ponto de reposicao', value: (row) => row.reorderPoint },
+      { header: 'Estoque maximo', value: (row) => row.maximumStock },
+      { header: 'Quantidade sugerida', value: (row) => row.suggestedReorderQuantity },
+      { header: 'Status', value: (row) => this.statusLabel(row.stockStatus) }
+    ]);
+  }
+
   protected statusLabel(status: StockStatus): string {
     const labels: Record<StockStatus, string> = {
       OUT_OF_STOCK: 'Sem estoque',
@@ -264,6 +286,15 @@ export class ReorderSuggestionReportComponent implements OnInit {
       summary: 'Erro ao carregar relatório de reposição sugerida',
       detail: 'Não foi possível buscar os itens para reposição. Verifique se a API está disponível.',
       life: 5000
+    });
+  }
+
+  private showEmptyExportWarning(): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Não há dados para exportar',
+      detail: 'Carregue ou filtre dados antes de exportar o CSV.',
+      life: 3000
     });
   }
 
