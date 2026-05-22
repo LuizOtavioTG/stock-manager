@@ -12,6 +12,10 @@
   (refresh)="loadInventory(inventoryPage().number, pageSize())"
   (lazyLoad)="onPageChange($event)"
 >
+    <ng-template appPaginatedListActions>
+      <button pButton type="button" icon="pi pi-plus" label="Novo inventário" (click)="openCreateDialog()"></button>
+    </ng-template>
+
     <ng-template appPaginatedListBody let-item>
       <tr>
         <td>
@@ -37,7 +41,7 @@
         <td>
           <div class="row-actions">
             <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="showComingSoon('Visualizar')"></button>
-            <button pButton type="button" text rounded icon="pi pi-sliders-h" aria-label="Editar limites" title="Editar limites" (click)="showComingSoon('Editar limites')"></button>
+            <button pButton type="button" text rounded icon="pi pi-sliders-h" aria-label="Editar limites" title="Editar limites" (click)="openEditDialog(item)"></button>
             <button pButton type="button" text rounded icon="pi pi-arrow-right-arrow-left" aria-label="Movimentar" title="Movimentar" (click)="showComingSoon('Movimentar')"></button>
           </div>
         </td>
@@ -56,3 +60,102 @@
       </tr>
     </ng-template>
 </app-paginated-list>
+
+<p-dialog
+  [header]="formTitle()"
+  modal
+  [visible]="isFormDialogVisible()"
+  [style]="{ width: 'min(46rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isFormDialogVisible.set($event)"
+>
+  <form class="inventory-form" [formGroup]="inventoryForm" (ngSubmit)="saveInventory()">
+    @if (!inventoryBeingEdited()) {
+      <label class="form-field form-field__full">
+        <span>Produto</span>
+        <p-select
+          formControlName="productId"
+          [options]="productOptions()"
+          optionLabel="label"
+          optionValue="id"
+          placeholder="Selecione"
+          appendTo="body"
+          [loading]="isLoadingProductOptions()"
+        />
+        @if (shouldShowError('productId')) {
+          <small>Selecione um produto.</small>
+        }
+      </label>
+    } @else if (inventoryBeingEdited(); as item) {
+      <div class="inventory-summary form-field__full">
+        <span>Produto</span>
+        <strong>{{ item.productName || 'Produto não informado' }}</strong>
+        <small>Quantidade atual: {{ item.quantity }}</small>
+      </div>
+    }
+
+    <label class="form-field form-field__full">
+      <span>Local de estoque</span>
+      <p-select
+        formControlName="storageLocationId"
+        [options]="storageLocationOptions()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecione"
+        appendTo="body"
+        [loading]="isLoadingStorageLocationOptions()"
+      />
+      @if (shouldShowError('storageLocationId')) {
+        <small>Selecione um local de estoque.</small>
+      }
+    </label>
+
+    @if (!inventoryBeingEdited()) {
+      <label class="form-field">
+        <span>Quantidade inicial</span>
+        <p-inputNumber formControlName="quantity" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="3" />
+        @if (shouldShowError('quantity')) {
+          <small>Informe uma quantidade maior ou igual a zero.</small>
+        }
+      </label>
+    }
+
+    <label class="form-field">
+      <span>Estoque mínimo</span>
+      <p-inputNumber formControlName="minimumStock" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="3" />
+      @if (shouldShowError('minimumStock')) {
+        <small>Informe um estoque mínimo maior ou igual a zero.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Ponto de reposição</span>
+      <p-inputNumber formControlName="reorderPoint" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="3" />
+      @if (shouldShowError('reorderPoint')) {
+        <small>Informe um ponto de reposição maior ou igual a zero.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Estoque máximo</span>
+      <p-inputNumber formControlName="maximumStock" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="3" />
+      @if (shouldShowError('maximumStock')) {
+        <small>Informe um estoque máximo maior ou igual a zero.</small>
+      }
+    </label>
+
+    @if (shouldShowLimitError('maximumLessThanMinimum')) {
+      <small class="form-error form-field__full">O estoque máximo não pode ser menor que o estoque mínimo.</small>
+    }
+    @if (shouldShowLimitError('reorderLessThanMinimum')) {
+      <small class="form-error form-field__full">O ponto de reposição não pode ser menor que o estoque mínimo.</small>
+    }
+    @if (shouldShowLimitError('reorderGreaterThanMaximum')) {
+      <small class="form-error form-field__full">O ponto de reposição não pode ser maior que o estoque máximo.</small>
+    }
+
+    <div class="form-actions">
+      <button pButton type="button" label="Cancelar" severity="secondary" text (click)="isFormDialogVisible.set(false)"></button>
+      <button pButton type="submit" label="Salvar" icon="pi pi-check" [loading]="isSaving()"></button>
+    </div>
+  </form>
+</p-dialog>

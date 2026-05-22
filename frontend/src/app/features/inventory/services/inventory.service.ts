@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiQueryParams, ApiService } from '../../../core/api/api.service';
 import { Page } from '../../../models/page.model';
 import { InventoryItem } from '../models/inventory-item.model';
+import { InventoryCreateRequest, InventoryUpdateRequest } from '../models/inventory-request.model';
 
 export interface InventoryPageRequest {
   page: number;
@@ -25,6 +26,18 @@ export class InventoryService {
 
   list(request: InventoryPageRequest): Observable<Page<InventoryItem>> {
     return this.listInventories(request.page, request.size, request.sort);
+  }
+
+  getInventoryById(id: number): Observable<InventoryItem> {
+    return this.api.get<InventoryItem>(`inventory/${id}`);
+  }
+
+  createInventory(payload: InventoryCreateRequest): Observable<InventoryItem> {
+    return this.api.post<InventoryItem, InventoryCreateRequest>('inventory', payload);
+  }
+
+  updateInventory(id: number, payload: InventoryUpdateRequest): Observable<InventoryItem> {
+    return this.api.put<InventoryItem, InventoryUpdateRequest>(`inventory/${id}`, payload);
   }
 
   private pageParams(request: InventoryPageRequest): ApiQueryParams {
