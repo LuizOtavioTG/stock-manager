@@ -21,7 +21,10 @@ export const routes: Routes = [
   },
   {
     path: 'estoque/movimentacoes',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/stock-movements/pages/stock-movement-list/stock-movement-list').then(
+        (m) => m.StockMovementListComponent
+      ),
     data: { title: 'Movimentações', section: 'Estoque' }
   },
   {

@@ -1,0 +1,224 @@
+<app-paginated-list
+  section="Estoque"
+  pageTitle="Movimentações"
+  cardTitle="Movimentações de estoque"
+  [value]="movements()"
+  [loading]="isLoading()"
+  [rows]="pageSize()"
+  [first]="first()"
+  [totalRecords]="totalElements()"
+  [tableStyle]="{ 'min-width': '78rem' }"
+  [columns]="columns"
+  (refresh)="loadMovements(movementsPage().number, pageSize())"
+  (lazyLoad)="onPageChange($event)"
+>
+  <ng-template appPaginatedListActions>
+    <div class="toolbar-actions">
+      <button pButton type="button" icon="pi pi-plus" label="Nova entrada" (click)="openForm('INBOUND')"></button>
+      <button pButton type="button" icon="pi pi-minus" label="Nova saída" severity="danger" outlined (click)="openForm('OUTBOUND')"></button>
+      <button pButton type="button" icon="pi pi-sliders-h" label="Novo ajuste" severity="secondary" outlined (click)="openForm('ADJUSTMENT')"></button>
+    </div>
+  </ng-template>
+
+  <ng-template appPaginatedListBody let-movement>
+    <tr>
+      <td>{{ movement.movementDate ? (movement.movementDate | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
+      <td>
+        <p-tag [severity]="movementSeverity(movement.movementType)" [value]="movementLabel(movement.movementType)" />
+      </td>
+      <td>
+        <div class="item-cell">
+          <strong>{{ movement.product?.name || 'Produto não informado' }}</strong>
+          <span>{{ movement.product?.sku || ('#' + (movement.product?.id || '-')) }}</span>
+        </div>
+      </td>
+      <td>{{ movement.storageLocation?.name || '-' }}</td>
+      <td class="numeric-column">{{ movement.quantity }}</td>
+      <td>{{ movement.reason || '-' }}</td>
+      <td>{{ movement.reference || '-' }}</td>
+      <td>{{ movement.responsible || '-' }}</td>
+      <td>
+        <div class="row-actions">
+          <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openMovementDetails(movement)"></button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template appPaginatedListEmpty>
+    <tr>
+      <td colspan="9">
+        <div class="empty-state">
+          <i class="pi pi-arrow-right-arrow-left" aria-hidden="true"></i>
+          <strong>Nenhuma movimentação encontrada</strong>
+          <span>Registre entradas, saídas ou ajustes para acompanhar o histórico do estoque.</span>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</app-paginated-list>
+
+<p-dialog
+  [header]="formTitle()"
+  modal
+  [visible]="isFormDialogVisible()"
+  [style]="{ width: 'min(50rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isFormDialogVisible.set($event)"
+>
+  <form class="movement-form" [formGroup]="movementForm" (ngSubmit)="saveMovement()">
+    <label class="form-field form-field__full">
+      <span>Produto</span>
+      <p-select
+        formControlName="productId"
+        [options]="productOptions()"
+        optionLabel="label"
+        optionValue="id"
+        placeholder="Selecione"
+        appendTo="body"
+        [loading]="isLoadingProductOptions()"
+      />
+      @if (shouldShowError('productId')) {
+        <small>Selecione um produto.</small>
+      }
+    </label>
+
+    <label class="form-field form-field__full">
+      <span>Local de estoque</span>
+      <p-select
+        formControlName="storageLocationId"
+        [options]="storageLocationOptions()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecione"
+        appendTo="body"
+        [loading]="isLoadingStorageLocationOptions()"
+      />
+      @if (shouldShowError('storageLocationId')) {
+        <small>Selecione um local de estoque.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>{{ quantityLabel() }}</span>
+      <p-inputNumber formControlName="quantity" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="3" />
+      @if (shouldShowError('quantity')) {
+        <small>
+          @if (formMode() === 'ADJUSTMENT') {
+            Informe uma quantidade maior ou igual a zero.
+          } @else {
+            Informe uma quantidade maior que zero.
+          }
+        </small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Responsável</span>
+      <input pInputText type="text" formControlName="responsible" maxlength="100" />
+      @if (shouldShowError('responsible')) {
+        <small>Responsável deve ter no máximo 100 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field form-field__full">
+      <span>Motivo</span>
+      <input pInputText type="text" formControlName="reason" maxlength="255" />
+      @if (shouldShowError('reason')) {
+        <small>
+          @if (formMode() === 'ADJUSTMENT') {
+            Informe o motivo com no máximo 255 caracteres.
+          } @else {
+            Motivo deve ter no máximo 255 caracteres.
+          }
+        </small>
+      }
+    </label>
+
+    @if (formMode() !== 'ADJUSTMENT') {
+      <label class="form-field form-field__full">
+        <span>Referência</span>
+        <input pInputText type="text" formControlName="reference" maxlength="100" />
+        @if (shouldShowError('reference')) {
+          <small>Referência deve ter no máximo 100 caracteres.</small>
+        }
+      </label>
+    }
+
+    <label class="form-field form-field__full">
+      <span>Observações</span>
+      <textarea pTextarea formControlName="notes" maxlength="500" rows="4"></textarea>
+      @if (shouldShowError('notes')) {
+        <small>Observações devem ter no máximo 500 caracteres.</small>
+      }
+    </label>
+
+    <div class="form-actions">
+      <button pButton type="button" label="Cancelar" severity="secondary" text (click)="isFormDialogVisible.set(false)"></button>
+      <button pButton type="submit" label="Salvar" icon="pi pi-check" [loading]="isSaving()"></button>
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  header="Detalhes da movimentação"
+  modal
+  [visible]="isDetailsDialogVisible()"
+  [style]="{ width: 'min(42rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isDetailsDialogVisible.set($event)"
+>
+  @if (isDetailsLoading()) {
+    <div class="details-loading">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      <span>Carregando movimentação...</span>
+    </div>
+  } @else if (selectedMovement(); as movement) {
+    <dl class="movement-details">
+      <div>
+        <dt>Tipo</dt>
+        <dd>
+          <p-tag [severity]="movementSeverity(movement.movementType)" [value]="movementLabel(movement.movementType)" />
+        </dd>
+      </div>
+      <div>
+        <dt>Quantidade</dt>
+        <dd>{{ movement.quantity }}</dd>
+      </div>
+      <div>
+        <dt>Produto</dt>
+        <dd>{{ productLabel(movement) }}</dd>
+      </div>
+      <div>
+        <dt>Local de estoque</dt>
+        <dd>{{ movement.storageLocation?.name || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Data</dt>
+        <dd>{{ movement.movementDate ? (movement.movementDate | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Criado em</dt>
+        <dd>{{ movement.createdAt ? (movement.createdAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+      <div class="movement-details__full">
+        <dt>Motivo</dt>
+        <dd>{{ movement.reason || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Referência</dt>
+        <dd>{{ movement.reference || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Responsável</dt>
+        <dd>{{ movement.responsible || '-' }}</dd>
+      </div>
+      <div class="movement-details__full">
+        <dt>Observações</dt>
+        <dd>{{ movement.notes || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Atualizado em</dt>
+        <dd>{{ movement.updatedAt ? (movement.updatedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+    </dl>
+  }
+</p-dialog>
