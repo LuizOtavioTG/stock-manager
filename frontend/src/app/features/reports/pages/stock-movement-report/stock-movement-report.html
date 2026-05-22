@@ -1,0 +1,189 @@
+<section class="report-page">
+  <header class="page-heading">
+    <span>Relatórios</span>
+    <div>
+      <h1>Relatório de movimentações</h1>
+      <button pButton type="button" icon="pi pi-refresh" label="Atualizar" text (click)="loadMovements(movementsPage().number, pageSize())"></button>
+    </div>
+  </header>
+
+  <section class="summary-grid" aria-label="Resumo das movimentações">
+    @for (card of summaryCards(); track card.title) {
+      <div class="summary-card">
+        <i [class]="card.icon" aria-hidden="true"></i>
+        <div>
+          <span>{{ card.title }}</span>
+          <strong>{{ card.value }}</strong>
+        </div>
+      </div>
+    }
+  </section>
+
+  <form class="filters-panel" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <label class="filter-field">
+      <span>Produto</span>
+      <p-select
+        formControlName="productId"
+        [options]="productOptions()"
+        optionLabel="label"
+        optionValue="id"
+        placeholder="Todos"
+        appendTo="body"
+        [showClear]="true"
+        [loading]="isLoadingProductOptions()"
+        (onChange)="onProductFilterChange()"
+      />
+    </label>
+
+    <label class="filter-field">
+      <span>Local de estoque</span>
+      <p-select
+        formControlName="storageLocationId"
+        [options]="storageLocationOptions()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Todos"
+        appendTo="body"
+        [showClear]="true"
+        [loading]="isLoadingStorageLocationOptions()"
+        (onChange)="onStorageLocationFilterChange()"
+      />
+    </label>
+
+    <label class="filter-field">
+      <span>Tipo de movimentação</span>
+      <p-select
+        formControlName="movementType"
+        [options]="movementTypeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Todos"
+        appendTo="body"
+        [showClear]="true"
+        (onChange)="onMovementTypeFilterChange()"
+      />
+    </label>
+
+    <div class="filter-actions">
+      <button pButton type="submit" icon="pi pi-filter" label="Aplicar filtros"></button>
+      <button pButton type="button" icon="pi pi-filter-slash" label="Limpar filtros" severity="secondary" text (click)="clearFilters()"></button>
+    </div>
+  </form>
+
+  <app-paginated-list
+    section="Relatórios"
+    pageTitle="Movimentações"
+    cardTitle="Movimentações registradas"
+    [value]="movements()"
+    [loading]="isLoading()"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [tableStyle]="{ 'min-width': '88rem' }"
+    [columns]="columns"
+    (refresh)="loadMovements(movementsPage().number, pageSize())"
+    (lazyLoad)="onPageChange($event)"
+  >
+    <ng-template appPaginatedListBody let-movement>
+      <tr>
+        <td>{{ movement.movementDate ? (movement.movementDate | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
+        <td>
+          <p-tag [severity]="movementSeverity(movement.movementType)" [value]="movementLabel(movement.movementType)" />
+        </td>
+        <td>
+          <div class="item-cell">
+            <strong>{{ movement.product?.name || 'Produto não informado' }}</strong>
+            <span>{{ movement.product?.sku || ('#' + (movement.product?.id || '-')) }}</span>
+          </div>
+        </td>
+        <td>{{ movement.storageLocation?.name || '-' }}</td>
+        <td class="numeric-column">{{ movement.quantity }}</td>
+        <td>{{ movement.reason || '-' }}</td>
+        <td>{{ movement.reference || '-' }}</td>
+        <td>{{ movement.responsible || '-' }}</td>
+        <td>{{ movement.notes || '-' }}</td>
+        <td>
+          <div class="row-actions">
+            <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openMovementDetails(movement)"></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template appPaginatedListEmpty>
+      <tr>
+        <td colspan="10">
+          <div class="empty-state">
+            <i class="pi pi-arrow-right-arrow-left" aria-hidden="true"></i>
+            <strong>Nenhuma movimentação encontrada</strong>
+            <span>Não há movimentações para os filtros selecionados.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </app-paginated-list>
+</section>
+
+<p-dialog
+  header="Detalhes da movimentação"
+  modal
+  [visible]="isDetailsDialogVisible()"
+  [style]="{ width: 'min(42rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isDetailsDialogVisible.set($event)"
+>
+  @if (isDetailsLoading()) {
+    <div class="details-loading">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      <span>Carregando movimentação...</span>
+    </div>
+  } @else if (selectedMovement(); as movement) {
+    <dl class="movement-details">
+      <div>
+        <dt>Tipo</dt>
+        <dd>
+          <p-tag [severity]="movementSeverity(movement.movementType)" [value]="movementLabel(movement.movementType)" />
+        </dd>
+      </div>
+      <div>
+        <dt>Quantidade</dt>
+        <dd>{{ movement.quantity }}</dd>
+      </div>
+      <div>
+        <dt>Produto</dt>
+        <dd>{{ productLabel(movement) }}</dd>
+      </div>
+      <div>
+        <dt>Local de estoque</dt>
+        <dd>{{ movement.storageLocation?.name || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Data</dt>
+        <dd>{{ movement.movementDate ? (movement.movementDate | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Criado em</dt>
+        <dd>{{ movement.createdAt ? (movement.createdAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+      <div class="movement-details__full">
+        <dt>Motivo</dt>
+        <dd>{{ movement.reason || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Referência</dt>
+        <dd>{{ movement.reference || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Responsável</dt>
+        <dd>{{ movement.responsible || '-' }}</dd>
+      </div>
+      <div class="movement-details__full">
+        <dt>Observações</dt>
+        <dd>{{ movement.notes || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Atualizado em</dt>
+        <dd>{{ movement.updatedAt ? (movement.updatedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+    </dl>
+  }
+</p-dialog>

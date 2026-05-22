@@ -72,5 +72,13 @@ export const routes: Routes = [
         (m) => m.ReorderSuggestionReportComponent
       ),
     data: { title: 'Reposição sugerida', section: 'Relatórios' }
+  },
+  {
+    path: 'relatorios/movimentacoes',
+    loadComponent: () =>
+      import('./features/reports/pages/stock-movement-report/stock-movement-report').then(
+        (m) => m.StockMovementReportComponent
+      ),
+    data: { title: 'Relatório de movimentações', section: 'Relatórios' }
   }
 ];

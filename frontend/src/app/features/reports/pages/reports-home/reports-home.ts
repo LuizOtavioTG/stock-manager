@@ -120,7 +120,7 @@ export class ReportsHomeComponent implements OnInit {
       icon: 'pi pi-arrow-right-arrow-left',
       tag: 'Histórico',
       tagSeverity: 'success',
-      route: '/estoque/movimentacoes'
+      route: '/relatorios/movimentacoes'
     },
     {
       title: 'Produtos cadastrados',
