@@ -22,6 +22,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 @Service
 public class StockMovementService {
 
@@ -56,6 +60,31 @@ public class StockMovementService {
 
     public Page<StockMovement> findStockMovementsByMovementType(MovementType movementType, Pageable pageable) {
         return stockmovementRepository.findByMovementType(movementType, pageable);
+    }
+
+    public Page<StockMovement> searchStockMovements(
+            Long productId,
+            Long storageLocationId,
+            MovementType movementType,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable
+    ) {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new InvalidStockMovementException("Data inicial não pode ser maior que a data final.");
+        }
+
+        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
+
+        return stockmovementRepository.search(
+                productId,
+                storageLocationId,
+                movementType,
+                startDateTime,
+                endDateTime,
+                pageable
+        );
     }
 
     @Transactional

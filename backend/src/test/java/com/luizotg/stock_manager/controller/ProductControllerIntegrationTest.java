@@ -1,5 +1,6 @@
 package com.luizotg.stock_manager.controller;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,8 +8,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -17,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 class ProductControllerIntegrationTest {
 
@@ -29,6 +35,14 @@ class ProductControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "integration-admin",
+                        "password",
+                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                )
+        );
+
         jdbcTemplate.update("DELETE FROM product_supplier");
         jdbcTemplate.update("DELETE FROM product");
         jdbcTemplate.update("DELETE FROM supplier");
@@ -43,6 +57,11 @@ class ProductControllerIntegrationTest {
                 INSERT INTO product (id, sku, name, brand, category_id, unit_of_measure, cost_price, sale_price, active)
                 VALUES (2001, 'SKU-DUP', 'Existing product', 'Brand', 2001, 'UN', 10.0, 15.0, true)
                 """);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test

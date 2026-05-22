@@ -12,9 +12,12 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/stock-movements")
@@ -69,6 +72,21 @@ public class StockMovementController {
     public ResponseEntity<Page<StockMovementDetailDTO>> listAllStockMovement(@PageableDefault(size = 20, sort = "movementDate") Pageable pageable) {
         Page<StockMovement> stockMovements = stockMovementService.findAllStockMovements(pageable);
         Page<StockMovementDetailDTO> dtoPage = stockMovements.map(StockMovementDetailDTO::new);
+        return ResponseEntity.ok(dtoPage);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<StockMovementDetailDTO>> searchStockMovements(
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long storageLocationId,
+            @RequestParam(required = false) MovementType movementType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(size = 20, sort = "movementDate") Pageable pageable
+    ) {
+        Page<StockMovementDetailDTO> dtoPage = stockMovementService
+                .searchStockMovements(productId, storageLocationId, movementType, startDate, endDate, pageable)
+                .map(StockMovementDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
     }
 
