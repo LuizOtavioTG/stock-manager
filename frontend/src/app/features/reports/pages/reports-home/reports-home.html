@@ -1,0 +1,50 @@
+<section class="reports-page">
+  <header class="page-heading">
+    <span>Análises</span>
+    <div>
+      <h1>Relatórios</h1>
+      <button pButton type="button" icon="pi pi-refresh" label="Atualizar" text (click)="loadSummary()"></button>
+    </div>
+  </header>
+
+  <section class="summary-section" aria-label="Resumo dos relatórios">
+    @if (isLoading()) {
+      <div class="summary-loading">
+        <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+        <span>Carregando resumo...</span>
+      </div>
+    } @else {
+      @for (item of summaryCards(); track item.title) {
+        <div class="summary-card">
+          <i [class]="item.icon" aria-hidden="true"></i>
+          <div>
+            <span>{{ item.title }}</span>
+            <strong>{{ item.value }}</strong>
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <section class="reports-grid" aria-label="Relatórios disponíveis">
+    @for (report of reportCards; track report.title) {
+      <p-card styleClass="report-card">
+        <div class="report-card__inner">
+          <div class="report-card__header">
+            <i [class]="report.icon" aria-hidden="true"></i>
+            <p-tag [severity]="report.tagSeverity" [value]="report.tag" />
+          </div>
+
+          <div class="report-card__content">
+            <h2>{{ report.title }}</h2>
+            <p>{{ report.description }}</p>
+          </div>
+
+          <div class="report-card__footer">
+            <a pButton [routerLink]="report.route" icon="pi pi-arrow-right" label="Abrir relatório"></a>
+          </div>
+        </div>
+      </p-card>
+    }
+  </section>
+</section>

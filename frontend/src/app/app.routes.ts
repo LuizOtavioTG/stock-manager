@@ -61,7 +61,8 @@ export const routes: Routes = [
   },
   {
     path: 'relatorios',
-    component: PlaceholderPage,
+    loadComponent: () =>
+      import('./features/reports/pages/reports-home/reports-home').then((m) => m.ReportsHomeComponent),
     data: { title: 'Relatórios', section: 'Análises' }
   }
 ];
