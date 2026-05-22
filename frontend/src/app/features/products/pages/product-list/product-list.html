@@ -12,6 +12,10 @@
   (refresh)="loadProducts(productsPage().number, pageSize())"
   (lazyLoad)="onPageChange($event)"
 >
+    <ng-template appPaginatedListActions>
+      <button pButton type="button" icon="pi pi-plus" label="Novo produto" (click)="openCreateDialog()"></button>
+    </ng-template>
+
     <ng-template appPaginatedListBody let-product>
       <tr>
         <td>{{ product.sku || '-' }}</td>
@@ -33,8 +37,8 @@
         <td>
           <div class="row-actions">
             <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openProductDetails(product)"></button>
-            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
-            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="showComingSoon('Excluir')"></button>
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="openEditDialog(product)"></button>
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="confirmDeleteProduct(product)"></button>
           </div>
         </td>
       </tr>
@@ -52,6 +56,127 @@
       </tr>
     </ng-template>
 </app-paginated-list>
+
+<p-confirmDialog />
+
+<p-dialog
+  [header]="formTitle()"
+  modal
+  [visible]="isFormDialogVisible()"
+  [style]="{ width: 'min(54rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isFormDialogVisible.set($event)"
+>
+  <form class="product-form" [formGroup]="productForm" (ngSubmit)="saveProduct()">
+    <label class="form-field">
+      <span>SKU</span>
+      <input pInputText type="text" formControlName="sku" maxlength="50" />
+      @if (shouldShowError('sku')) {
+        <small>Informe o SKU com no máximo 50 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Nome</span>
+      <input pInputText type="text" formControlName="name" maxlength="100" />
+      @if (shouldShowError('name')) {
+        <small>Informe o nome com no máximo 100 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field form-field__full">
+      <span>Descrição</span>
+      <textarea pTextarea formControlName="description" maxlength="255" rows="3"></textarea>
+      @if (shouldShowError('description')) {
+        <small>A descrição deve ter no máximo 255 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Marca</span>
+      <input pInputText type="text" formControlName="brand" maxlength="50" />
+      @if (shouldShowError('brand')) {
+        <small>Informe a marca com no máximo 50 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Categoria</span>
+      <p-select
+        formControlName="categoryId"
+        [options]="categoryOptions()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecione"
+        appendTo="body"
+        [loading]="isLoadingCategoryOptions()"
+      />
+      @if (shouldShowError('categoryId')) {
+        <small>Selecione uma categoria.</small>
+      }
+    </label>
+
+    <label class="form-field form-field__full">
+      <span>Fornecedores</span>
+      <p-multiselect
+        formControlName="supplierIds"
+        [options]="supplierOptions()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecione"
+        display="chip"
+        appendTo="body"
+        [loading]="isLoadingSupplierOptions()"
+      />
+      @if (shouldShowError('supplierIds')) {
+        <small>Selecione pelo menos um fornecedor.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Unidade de medida</span>
+      <input pInputText type="text" formControlName="unitOfMeasure" maxlength="20" />
+      @if (shouldShowError('unitOfMeasure')) {
+        <small>Informe a unidade com no máximo 20 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Preço de custo</span>
+      <p-inputNumber formControlName="costPrice" mode="currency" currency="BRL" locale="pt-BR" [min]="0" />
+      @if (shouldShowError('costPrice')) {
+        <small>Informe um preço de custo maior ou igual a zero.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Preço de venda</span>
+      <p-inputNumber formControlName="salePrice" mode="currency" currency="BRL" locale="pt-BR" [min]="0" />
+      @if (shouldShowError('salePrice')) {
+        <small>Informe um preço de venda maior ou igual a zero.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Data de validade</span>
+      <input pInputText type="date" formControlName="expirationDate" [min]="minExpirationDate" />
+      @if (shouldShowError('expirationDate')) {
+        <small>A data de validade deve ser hoje ou uma data futura.</small>
+      }
+    </label>
+
+    @if (productBeingEdited()) {
+      <label class="form-field status-field">
+        <span>Status</span>
+        <p-toggleSwitch formControlName="active" />
+      </label>
+    }
+
+    <div class="form-actions">
+      <button pButton type="button" label="Cancelar" severity="secondary" text (click)="isFormDialogVisible.set(false)"></button>
+      <button pButton type="submit" label="Salvar" icon="pi pi-check" [loading]="isSaving()"></button>
+    </div>
+  </form>
+</p-dialog>
 
 <p-dialog
   header="Detalhes do produto"
