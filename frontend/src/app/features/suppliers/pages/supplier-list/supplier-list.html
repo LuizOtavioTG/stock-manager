@@ -12,6 +12,10 @@
   (refresh)="loadSuppliers(suppliersPage().number, pageSize())"
   (lazyLoad)="onPageChange($event)"
 >
+    <ng-template appPaginatedListActions>
+      <button pButton type="button" icon="pi pi-plus" label="Novo fornecedor" (click)="openCreateDialog()"></button>
+    </ng-template>
+
     <ng-template appPaginatedListBody let-supplier>
       <tr>
         <td>
@@ -30,8 +34,8 @@
         <td>
           <div class="row-actions">
             <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openSupplierDetails(supplier)"></button>
-            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
-            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="showComingSoon('Excluir')"></button>
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="openEditDialog(supplier)"></button>
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="confirmDeleteSupplier(supplier)"></button>
           </div>
         </td>
       </tr>
@@ -49,6 +53,73 @@
       </tr>
     </ng-template>
 </app-paginated-list>
+
+<p-confirmDialog />
+
+<p-dialog
+  [header]="formTitle()"
+  modal
+  [visible]="isFormDialogVisible()"
+  [style]="{ width: 'min(40rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isFormDialogVisible.set($event)"
+>
+  <form class="supplier-form" [formGroup]="supplierForm" (ngSubmit)="saveSupplier()">
+    <label class="form-field">
+      <span>Nome</span>
+      <input pInputText type="text" formControlName="name" maxlength="255" autocomplete="off" />
+      @if (shouldShowError('name')) {
+        <small>Informe um nome com até 255 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Nome do contato</span>
+      <input pInputText type="text" formControlName="contactName" maxlength="255" autocomplete="off" />
+      @if (shouldShowError('contactName')) {
+        <small>O nome do contato deve ter no máximo 255 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Telefone</span>
+      <input pInputText type="text" formControlName="phoneNumber" maxlength="20" autocomplete="off" />
+      @if (shouldShowError('phoneNumber')) {
+        <small>O telefone deve ter no máximo 20 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>E-mail</span>
+      <input pInputText type="email" formControlName="email" maxlength="255" autocomplete="off" />
+      @if (shouldShowError('email')) {
+        <small>Informe um e-mail válido com até 255 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Endereço</span>
+      <textarea pTextarea formControlName="address" maxlength="500" rows="4"></textarea>
+      @if (shouldShowError('address')) {
+        <small>O endereço deve ter no máximo 500 caracteres.</small>
+      }
+    </label>
+
+    @if (supplierBeingEdited()) {
+      <label class="form-field form-field--inline">
+        <span>Status</span>
+        <div class="status-control">
+          <p-toggleSwitch formControlName="active" />
+          <strong>{{ supplierForm.controls.active.value ? 'Ativo' : 'Inativo' }}</strong>
+        </div>
+      </label>
+    }
+
+    <div class="form-actions">
+      <button pButton type="button" severity="secondary" outlined label="Cancelar" (click)="isFormDialogVisible.set(false)"></button>
+      <button pButton type="submit" label="Salvar" icon="pi pi-check" [loading]="isSaving()"></button>
+    </div>
+  </form>
+</p-dialog>
 
 <p-dialog
   header="Detalhes do fornecedor"
