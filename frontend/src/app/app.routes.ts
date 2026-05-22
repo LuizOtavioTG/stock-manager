@@ -64,5 +64,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/reports/pages/reports-home/reports-home').then((m) => m.ReportsHomeComponent),
     data: { title: 'Relatórios', section: 'Análises' }
+  },
+  {
+    path: 'relatorios/reposicao-sugerida',
+    loadComponent: () =>
+      import('./features/reports/pages/reorder-suggestion-report/reorder-suggestion-report').then(
+        (m) => m.ReorderSuggestionReportComponent
+      ),
+    data: { title: 'Reposição sugerida', section: 'Relatórios' }
   }
 ];

@@ -12,6 +12,8 @@ export interface InventoryAlertsPageRequest {
   page: number;
   size: number;
   sort?: string;
+  productId?: number | null;
+  storageLocationId?: number | null;
 }
 
 @Injectable({
@@ -30,11 +32,17 @@ export class InventoryAlertsService {
     });
   }
 
+  getReorderNeeded(page: number, size: number, sort = 'id,asc'): Observable<Page<InventoryAlertItem>> {
+    return this.getAlerts('reorder-needed', { page, size, sort });
+  }
+
   private pageParams(request: InventoryAlertsPageRequest): ApiQueryParams {
     return {
       page: request.page,
       size: request.size,
-      sort: request.sort ?? 'id,asc'
+      sort: request.sort ?? 'id,asc',
+      productId: request.productId,
+      storageLocationId: request.storageLocationId
     };
   }
 }

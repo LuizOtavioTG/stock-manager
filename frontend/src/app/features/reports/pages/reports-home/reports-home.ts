@@ -104,7 +104,7 @@ export class ReportsHomeComponent implements OnInit {
       icon: 'pi pi-refresh',
       tag: 'Comprar',
       tagSeverity: 'info',
-      route: '/estoque/alertas'
+      route: '/relatorios/reposicao-sugerida'
     },
     {
       title: 'Estoque excedente',

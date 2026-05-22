@@ -1,0 +1,105 @@
+<section class="report-page">
+  <header class="page-heading">
+    <span>Relatórios</span>
+    <div>
+      <h1>Reposição sugerida</h1>
+      <button pButton type="button" icon="pi pi-refresh" label="Atualizar" text (click)="loadReport(reportPage().number, pageSize())"></button>
+    </div>
+  </header>
+
+  <section class="summary-grid" aria-label="Resumo da reposição sugerida">
+    @for (card of summaryCards(); track card.title) {
+      <div class="summary-card">
+        <i [class]="card.icon" aria-hidden="true"></i>
+        <div>
+          <span>{{ card.title }}</span>
+          <strong>{{ card.value }}</strong>
+        </div>
+      </div>
+    }
+  </section>
+
+  <form class="filters-panel" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <label class="filter-field">
+      <span>Produto</span>
+      <p-select
+        formControlName="productId"
+        [options]="productOptions()"
+        optionLabel="label"
+        optionValue="id"
+        placeholder="Todos"
+        appendTo="body"
+        [showClear]="true"
+        [loading]="isLoadingProductOptions()"
+      />
+    </label>
+
+    <label class="filter-field">
+      <span>Local de estoque</span>
+      <p-select
+        formControlName="storageLocationId"
+        [options]="storageLocationOptions()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Todos"
+        appendTo="body"
+        [showClear]="true"
+        [loading]="isLoadingStorageLocationOptions()"
+      />
+    </label>
+
+    <div class="filter-actions">
+      <button pButton type="submit" icon="pi pi-filter" label="Aplicar filtros"></button>
+      <button pButton type="button" icon="pi pi-filter-slash" label="Limpar filtros" severity="secondary" text (click)="clearFilters()"></button>
+    </div>
+  </form>
+
+  <app-paginated-list
+    section="Relatórios"
+    pageTitle="Reposição sugerida"
+    cardTitle="Itens com necessidade de reposição"
+    [value]="items()"
+    [loading]="isLoading()"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [tableStyle]="{ 'min-width': '78rem' }"
+    [columns]="columns"
+    (refresh)="loadReport(reportPage().number, pageSize())"
+    (lazyLoad)="onPageChange($event)"
+  >
+    <ng-template appPaginatedListBody let-item>
+      <tr>
+        <td>
+          <div class="item-cell">
+            <strong>{{ item.productName || 'Produto não informado' }}</strong>
+            <span>#{{ item.productId || '-' }}</span>
+          </div>
+        </td>
+        <td>{{ item.storageLocationName || '-' }}</td>
+        <td class="numeric-column">{{ item.quantity }}</td>
+        <td class="numeric-column">{{ item.minimumStock }}</td>
+        <td class="numeric-column">{{ item.reorderPoint }}</td>
+        <td class="numeric-column">{{ item.maximumStock ?? '-' }}</td>
+        <td class="numeric-column">
+          <strong class="suggested-quantity">{{ item.suggestedReorderQuantity }}</strong>
+        </td>
+        <td>
+          <p-tag [severity]="statusSeverity(item.stockStatus)" [value]="statusLabel(item.stockStatus)" />
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template appPaginatedListEmpty>
+      <tr>
+        <td colspan="8">
+          <div class="empty-state">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            <strong>Nenhum item para reposição</strong>
+            <span>Não há itens no ponto de reposição para os filtros selecionados.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </app-paginated-list>
+</section>
