@@ -12,6 +12,10 @@
   (refresh)="loadStorageLocations(storageLocationsPage().number, pageSize())"
   (lazyLoad)="onPageChange($event)"
 >
+    <ng-template appPaginatedListActions>
+      <button pButton type="button" icon="pi pi-plus" label="Novo local de estoque" (click)="openCreateDialog()"></button>
+    </ng-template>
+
     <ng-template appPaginatedListBody let-storageLocation>
       <tr>
         <td>
@@ -35,8 +39,8 @@
         <td>
           <div class="row-actions">
             <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openStorageLocationDetails(storageLocation)"></button>
-            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="showComingSoon('Editar')"></button>
-            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="showComingSoon('Excluir')"></button>
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="openEditDialog(storageLocation)"></button>
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-trash" aria-label="Excluir" title="Excluir" (click)="confirmDeleteStorageLocation(storageLocation)"></button>
           </div>
         </td>
       </tr>
@@ -54,6 +58,111 @@
       </tr>
     </ng-template>
 </app-paginated-list>
+
+<p-confirmDialog />
+
+<p-dialog
+  [header]="formTitle()"
+  modal
+  [visible]="isFormDialogVisible()"
+  [style]="{ width: 'min(46rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isFormDialogVisible.set($event)"
+>
+  <form class="storage-location-form" [formGroup]="storageLocationForm" (ngSubmit)="saveStorageLocation()">
+    <label class="form-field">
+      <span>Nome</span>
+      <input pInputText type="text" formControlName="name" maxlength="100" autocomplete="off" />
+      @if (shouldShowError('name')) {
+        <small>Informe um nome com até 100 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Tipo</span>
+      <input pInputText type="text" formControlName="type" maxlength="50" autocomplete="off" />
+      @if (shouldShowError('type')) {
+        <small>Informe um tipo com até 50 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field form-field__full">
+      <span>Endereço</span>
+      <input pInputText type="text" formControlName="address" maxlength="255" autocomplete="off" />
+      @if (shouldShowError('address')) {
+        <small>O endereço deve ter no máximo 255 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Telefone</span>
+      <input pInputText type="text" formControlName="phoneNumber" maxlength="20" autocomplete="off" />
+      @if (shouldShowError('phoneNumber')) {
+        <small>O telefone deve ter no máximo 20 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>E-mail</span>
+      <input pInputText type="email" formControlName="email" maxlength="100" autocomplete="off" />
+      @if (shouldShowError('email')) {
+        <small>Informe um e-mail válido com até 100 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Responsável</span>
+      <input pInputText type="text" formControlName="responsibleName" maxlength="100" autocomplete="off" />
+      @if (shouldShowError('responsibleName')) {
+        <small>O responsável deve ter no máximo 100 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Capacidade</span>
+      <p-inputNumber formControlName="capacity" inputId="storage-location-capacity" [min]="0" [maxFractionDigits]="0" />
+      @if (shouldShowError('capacity')) {
+        <small>A capacidade deve ser zero ou um número positivo.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Latitude</span>
+      <p-inputNumber formControlName="latitude" inputId="storage-location-latitude" [min]="-90" [max]="90" [maxFractionDigits]="6" />
+      @if (shouldShowError('latitude')) {
+        <small>A latitude deve estar entre -90 e 90.</small>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Longitude</span>
+      <p-inputNumber formControlName="longitude" inputId="storage-location-longitude" [min]="-180" [max]="180" [maxFractionDigits]="6" />
+      @if (shouldShowError('longitude')) {
+        <small>A longitude deve estar entre -180 e 180.</small>
+      }
+    </label>
+
+    <label class="form-field form-field__full">
+      <span>Observações</span>
+      <textarea pTextarea formControlName="notes" maxlength="500" rows="4"></textarea>
+      @if (shouldShowError('notes')) {
+        <small>As observações devem ter no máximo 500 caracteres.</small>
+      }
+    </label>
+
+    <label class="form-field form-field--inline">
+      <span>Local padrão</span>
+      <div class="default-location-control">
+        <p-toggleSwitch formControlName="defaultLocation" />
+        <strong>{{ storageLocationForm.controls.defaultLocation.value ? 'Padrão' : 'Normal' }}</strong>
+      </div>
+    </label>
+
+    <div class="form-actions form-field__full">
+      <button pButton type="button" severity="secondary" outlined label="Cancelar" (click)="isFormDialogVisible.set(false)"></button>
+      <button pButton type="submit" label="Salvar" icon="pi pi-check" [loading]="isSaving()"></button>
+    </div>
+  </form>
+</p-dialog>
 
 <p-dialog
   header="Detalhes do local de estoque"
