@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -23,13 +24,8 @@ import { ProductService } from '../../../products/services/product.service';
 import { StorageLocation } from '../../../storage-locations/models/storage-location.model';
 import { StorageLocationService } from '../../../storage-locations/services/storage-location.service';
 import { MovementType, StockMovement } from '../../../stock-movements/models/stock-movement.model';
+import { StockMovementSearchRequest } from '../../../stock-movements/models/stock-movement-request.model';
 import { StockMovementService } from '../../../stock-movements/services/stock-movement.service';
-
-type ActiveMovementFilter =
-  | { type: 'product'; value: number }
-  | { type: 'storageLocation'; value: number }
-  | { type: 'movementType'; value: MovementType }
-  | null;
 
 interface ProductOption {
   id: number;
@@ -45,6 +41,14 @@ interface SummaryCard {
   title: string;
   value: number;
   icon: string;
+}
+
+interface AppliedMovementFilters {
+  productId: number | null;
+  storageLocationId: number | null;
+  movementType: MovementType | null;
+  startDate: string | null;
+  endDate: string | null;
 }
 
 const EMPTY_PAGE: Page<StockMovement> = {
@@ -63,6 +67,7 @@ const EMPTY_PAGE: Page<StockMovement> = {
   imports: [
     ButtonModule,
     DatePipe,
+    DatePickerModule,
     DialogModule,
     PaginatedListBodyDirective,
     PaginatedListComponent,
@@ -115,7 +120,13 @@ export class StockMovementReportComponent implements OnInit {
   protected readonly isLoadingStorageLocationOptions = signal(false);
   protected readonly pageSize = signal(10);
   protected readonly sort = signal('movementDate,desc');
-  protected readonly activeFilter = signal<ActiveMovementFilter>(null);
+  protected readonly appliedFilters = signal<AppliedMovementFilters>({
+    productId: null,
+    storageLocationId: null,
+    movementType: null,
+    startDate: null,
+    endDate: null
+  });
   protected readonly movementsPage = signal<Page<StockMovement>>(EMPTY_PAGE);
   protected readonly selectedMovement = signal<StockMovement | null>(null);
   protected readonly productOptions = signal<ProductOption[]>([]);
@@ -159,7 +170,9 @@ export class StockMovementReportComponent implements OnInit {
   protected readonly filterForm = this.formBuilder.group({
     productId: this.formBuilder.control<number | null>(null),
     storageLocationId: this.formBuilder.control<number | null>(null),
-    movementType: this.formBuilder.control<MovementType | null>(null)
+    movementType: this.formBuilder.control<MovementType | null>(null),
+    startDate: this.formBuilder.control<Date | null>(null),
+    endDate: this.formBuilder.control<Date | null>(null)
   });
 
   ngOnInit(): void {
@@ -178,37 +191,13 @@ export class StockMovementReportComponent implements OnInit {
     this.loadMovements(page, rows, sort);
   }
 
-  protected onProductFilterChange(): void {
-    if (this.filterForm.controls.productId.value) {
-      this.filterForm.patchValue({ storageLocationId: null, movementType: null }, { emitEvent: false });
-    }
-  }
-
-  protected onStorageLocationFilterChange(): void {
-    if (this.filterForm.controls.storageLocationId.value) {
-      this.filterForm.patchValue({ productId: null, movementType: null }, { emitEvent: false });
-    }
-  }
-
-  protected onMovementTypeFilterChange(): void {
-    if (this.filterForm.controls.movementType.value) {
-      this.filterForm.patchValue({ productId: null, storageLocationId: null }, { emitEvent: false });
-    }
-  }
-
   protected applyFilters(): void {
-    const value = this.filterForm.getRawValue();
-
-    if (value.productId) {
-      this.activeFilter.set({ type: 'product', value: value.productId });
-    } else if (value.storageLocationId) {
-      this.activeFilter.set({ type: 'storageLocation', value: value.storageLocationId });
-    } else if (value.movementType) {
-      this.activeFilter.set({ type: 'movementType', value: value.movementType });
-    } else {
-      this.activeFilter.set(null);
+    if (!this.isPeriodValid()) {
+      this.showInvalidPeriodError();
+      return;
     }
 
+    this.appliedFilters.set(this.currentFilters());
     this.loadMovements(0, this.pageSize(), this.sort());
   }
 
@@ -216,9 +205,17 @@ export class StockMovementReportComponent implements OnInit {
     this.filterForm.reset({
       productId: null,
       storageLocationId: null,
-      movementType: null
+      movementType: null,
+      startDate: null,
+      endDate: null
     });
-    this.activeFilter.set(null);
+    this.appliedFilters.set({
+      productId: null,
+      storageLocationId: null,
+      movementType: null,
+      startDate: null,
+      endDate: null
+    });
     this.loadMovements(0, this.pageSize(), this.sort());
   }
 
@@ -321,21 +318,14 @@ export class StockMovementReportComponent implements OnInit {
   }
 
   private movementRequest(page: number, size: number, sort: string) {
-    const activeFilter = this.activeFilter();
+    const request: StockMovementSearchRequest = {
+      ...this.appliedFilters(),
+      page,
+      size,
+      sort
+    };
 
-    if (!activeFilter) {
-      return this.stockMovementService.listMovements(page, size, sort);
-    }
-
-    if (activeFilter.type === 'product') {
-      return this.stockMovementService.listMovementsByProduct(activeFilter.value, page, size, sort);
-    }
-
-    if (activeFilter.type === 'storageLocation') {
-      return this.stockMovementService.listMovementsByStorageLocation(activeFilter.value, page, size, sort);
-    }
-
-    return this.stockMovementService.listMovementsByType(activeFilter.value, page, size, sort);
+    return this.stockMovementService.searchMovements(request);
   }
 
   private loadOptions(): void {
@@ -396,6 +386,45 @@ export class StockMovementReportComponent implements OnInit {
     return `${sortField},${sortOrder === -1 ? 'desc' : 'asc'}`;
   }
 
+  private currentFilters(): AppliedMovementFilters {
+    const value = this.filterForm.getRawValue();
+
+    return {
+      productId: value.productId ?? null,
+      storageLocationId: value.storageLocationId ?? null,
+      movementType: value.movementType ?? null,
+      startDate: this.dateToApi(value.startDate),
+      endDate: this.dateToApi(value.endDate)
+    };
+  }
+
+  private isPeriodValid(): boolean {
+    const { startDate, endDate } = this.filterForm.getRawValue();
+
+    if (!startDate || !endDate) {
+      return true;
+    }
+
+    return this.stripTime(startDate).getTime() <= this.stripTime(endDate).getTime();
+  }
+
+  private dateToApi(date: Date | null | undefined): string | null {
+    if (!date) {
+      return null;
+    }
+
+    const normalizedDate = this.stripTime(date);
+    const year = normalizedDate.getFullYear();
+    const month = String(normalizedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(normalizedDate.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private stripTime(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
   private showLoadError(): void {
     this.messageService.add({
       severity: 'error',
@@ -411,6 +440,15 @@ export class StockMovementReportComponent implements OnInit {
       summary: 'Não há dados para exportar',
       detail: 'Carregue ou filtre dados antes de exportar o CSV.',
       life: 3000
+    });
+  }
+
+  private showInvalidPeriodError(): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Data inicial não pode ser maior que a data final.',
+      detail: 'Ajuste o período informado antes de aplicar os filtros.',
+      life: 4000
     });
   }
 

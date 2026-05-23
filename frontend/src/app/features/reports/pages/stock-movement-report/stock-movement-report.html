@@ -34,7 +34,6 @@
         appendTo="body"
         [showClear]="true"
         [loading]="isLoadingProductOptions()"
-        (onChange)="onProductFilterChange()"
       />
     </label>
 
@@ -49,7 +48,6 @@
         appendTo="body"
         [showClear]="true"
         [loading]="isLoadingStorageLocationOptions()"
-        (onChange)="onStorageLocationFilterChange()"
       />
     </label>
 
@@ -63,7 +61,30 @@
         placeholder="Todos"
         appendTo="body"
         [showClear]="true"
-        (onChange)="onMovementTypeFilterChange()"
+      />
+    </label>
+
+    <label class="filter-field">
+      <span>Data inicial</span>
+      <p-datepicker
+        formControlName="startDate"
+        dateFormat="dd/mm/yy"
+        placeholder="Início"
+        appendTo="body"
+        [showIcon]="true"
+        [showButtonBar]="true"
+      />
+    </label>
+
+    <label class="filter-field">
+      <span>Data final</span>
+      <p-datepicker
+        formControlName="endDate"
+        dateFormat="dd/mm/yy"
+        placeholder="Fim"
+        appendTo="body"
+        [showIcon]="true"
+        [showButtonBar]="true"
       />
     </label>
 

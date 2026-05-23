@@ -6,6 +6,7 @@ import { Page } from '../../../models/page.model';
 import { MovementType, StockMovement } from '../models/stock-movement.model';
 import {
   StockAdjustmentRequest,
+  StockMovementSearchRequest,
   StockInboundRequest,
   StockOutboundRequest
 } from '../models/stock-movement-request.model';
@@ -67,6 +68,21 @@ export class StockMovementService {
         page,
         size,
         sort
+      }
+    });
+  }
+
+  searchMovements(request: StockMovementSearchRequest): Observable<Page<StockMovement>> {
+    return this.api.get<Page<StockMovement>>('api/stock-movements/search', {
+      params: {
+        productId: request.productId,
+        storageLocationId: request.storageLocationId,
+        movementType: request.movementType,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        page: request.page,
+        size: request.size,
+        sort: request.sort ?? 'movementDate,desc'
       }
     });
   }
