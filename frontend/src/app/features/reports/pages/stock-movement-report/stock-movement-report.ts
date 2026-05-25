@@ -116,6 +116,7 @@ export class StockMovementReportComponent implements OnInit {
   protected readonly isLoading = signal(false);
   protected readonly isDetailsLoading = signal(false);
   protected readonly isDetailsDialogVisible = signal(false);
+  protected readonly isExporting = signal(false);
   protected readonly isLoadingProductOptions = signal(false);
   protected readonly isLoadingStorageLocationOptions = signal(false);
   protected readonly pageSize = signal(10);
@@ -259,23 +260,47 @@ export class StockMovementReportComponent implements OnInit {
   }
 
   protected exportCsv(): void {
-    const rows = this.movements();
-
-    if (!rows.length) {
-      this.showEmptyExportWarning();
+    if (this.isExporting()) {
       return;
     }
 
-    this.csvExportService.exportToCsv('relatorio-movimentacoes.csv', rows, [
+    this.isExporting.set(true);
+
+    this.stockMovementService
+      .exportAllMovements({
+        ...this.appliedFilters(),
+        sort: this.sort()
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => {
+          this.isExporting.set(false);
+
+          if (!rows.length) {
+            this.showEmptyExportWarning();
+            return;
+          }
+
+          this.exportRows(rows);
+        },
+        error: () => {
+          this.isExporting.set(false);
+          this.showExportError();
+        }
+      });
+  }
+
+  private exportRows(rows: StockMovement[]): void {
+    this.csvExportService.exportToCsv('movimentacoes-estoque.csv', rows, [
       { header: 'Data', value: (row) => row.movementDate },
       { header: 'Tipo', value: (row) => this.movementLabel(row.movementType) },
       { header: 'Produto', value: (row) => this.productLabel(row) },
       { header: 'Local de estoque', value: (row) => row.storageLocation?.name },
       { header: 'Quantidade', value: (row) => row.quantity },
       { header: 'Motivo', value: (row) => row.reason },
-      { header: 'Referencia', value: (row) => row.reference },
-      { header: 'Responsavel', value: (row) => row.responsible },
-      { header: 'Observacoes', value: (row) => row.notes }
+      { header: 'Referência', value: (row) => row.reference },
+      { header: 'Responsável', value: (row) => row.responsible },
+      { header: 'Observações', value: (row) => row.notes }
     ]);
   }
 
@@ -449,6 +474,15 @@ export class StockMovementReportComponent implements OnInit {
       summary: 'Data inicial não pode ser maior que a data final.',
       detail: 'Ajuste o período informado antes de aplicar os filtros.',
       life: 4000
+    });
+  }
+
+  private showExportError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao exportar movimentações',
+      detail: 'Não foi possível gerar o CSV. Tente novamente.',
+      life: 5000
     });
   }
 

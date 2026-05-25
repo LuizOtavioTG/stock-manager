@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ApiService } from '../../../core/api/api.service';
 import { Page } from '../../../models/page.model';
@@ -85,6 +85,34 @@ export class StockMovementService {
         sort: request.sort ?? 'movementDate,desc'
       }
     });
+  }
+
+  exportAllMovements(request: Omit<StockMovementSearchRequest, 'page' | 'size'>): Observable<StockMovement[]> {
+    const pageSize = 100;
+    const baseRequest = {
+      ...request,
+      size: pageSize,
+      sort: request.sort ?? 'movementDate,desc'
+    };
+
+    return this.searchMovements({ ...baseRequest, page: 0 }).pipe(
+      switchMap((firstPage) => {
+        if (firstPage.totalPages <= 1) {
+          return of(firstPage.content);
+        }
+
+        const remainingRequests = Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
+          this.searchMovements({ ...baseRequest, page: index + 1 })
+        );
+
+        return forkJoin(remainingRequests).pipe(
+          map((pages) => [
+            ...firstPage.content,
+            ...pages.flatMap((page) => page.content)
+          ])
+        );
+      })
+    );
   }
 
   getMovementById(id: number): Observable<StockMovement> {
