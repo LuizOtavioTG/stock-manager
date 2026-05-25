@@ -1,7 +1,11 @@
 package com.luizotg.stock_manager.dto.inventory;
 
+import com.luizotg.stock_manager.dto.supplier.SupplierSummaryDTO;
 import com.luizotg.stock_manager.model.Inventory;
+import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.StockStatus;
+
+import java.util.List;
 
 public record InventoryDetailDTO(
         Long id,
@@ -16,7 +20,8 @@ public record InventoryDetailDTO(
         StockStatus stockStatus,
         Boolean lowStock,
         Boolean reorderNeeded,
-        Integer suggestedReorderQuantity
+        Integer suggestedReorderQuantity,
+        List<SupplierSummaryDTO> suppliers
 ) {
 
     public InventoryDetailDTO(Inventory inventory) {
@@ -33,7 +38,19 @@ public record InventoryDetailDTO(
                 inventory.getStockStatus(),
                 inventory.isLowStock(),
                 inventory.needsReorder(),
-                inventory.getSuggestedReorderQuantity()
+                inventory.getSuggestedReorderQuantity(),
+                suppliers(inventory.getProduct())
         );
+    }
+
+    private static List<SupplierSummaryDTO> suppliers(Product product) {
+        if (product == null || product.getSuppliers() == null) {
+            return List.of();
+        }
+
+        return product.getSuppliers()
+                .stream()
+                .map(SupplierSummaryDTO::new)
+                .toList();
     }
 }

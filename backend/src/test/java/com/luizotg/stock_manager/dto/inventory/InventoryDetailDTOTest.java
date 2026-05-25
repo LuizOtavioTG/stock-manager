@@ -24,5 +24,6 @@ class InventoryDetailDTOTest {
         assertThat(dto.lowStock()).isFalse();
         assertThat(dto.reorderNeeded()).isTrue();
         assertThat(dto.suggestedReorderQuantity()).isEqualTo(85);
+        assertThat(dto.suppliers()).isEmpty();
     }
 }

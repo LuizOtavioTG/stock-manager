@@ -1,5 +1,11 @@
 export type StockStatus = 'OUT_OF_STOCK' | 'LOW_STOCK' | 'REORDER_NEEDED' | 'OVERSTOCK' | 'NORMAL';
 
+export interface InventorySupplierSummary {
+  id: number;
+  name: string;
+  active?: boolean;
+}
+
 export interface InventoryItem {
   id: number;
   productId: number | null;
@@ -14,4 +20,5 @@ export interface InventoryItem {
   lowStock: boolean;
   reorderNeeded: boolean;
   suggestedReorderQuantity: number;
+  suppliers: InventorySupplierSummary[];
 }
