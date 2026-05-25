@@ -1,0 +1,270 @@
+package com.luizotg.stock_manager.service;
+
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderItemCreateDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
+import com.luizotg.stock_manager.exception.BusinessException;
+import com.luizotg.stock_manager.exception.ResourceNotFoundException;
+import com.luizotg.stock_manager.model.Product;
+import com.luizotg.stock_manager.model.PurchaseOrder;
+import com.luizotg.stock_manager.model.PurchaseOrderStatus;
+import com.luizotg.stock_manager.model.Supplier;
+import com.luizotg.stock_manager.repository.ProductRepository;
+import com.luizotg.stock_manager.repository.PurchaseOrderRepository;
+import com.luizotg.stock_manager.repository.SupplierRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class PurchaseOrderServiceTest {
+
+    private static final Long PURCHASE_ORDER_ID = 1L;
+    private static final Long SUPPLIER_ID = 10L;
+    private static final Long PRODUCT_ID = 20L;
+    private static final Long SECOND_PRODUCT_ID = 21L;
+
+    @Mock
+    private PurchaseOrderRepository purchaseOrderRepository;
+
+    @Mock
+    private SupplierRepository supplierRepository;
+
+    @Mock
+    private ProductRepository productRepository;
+
+    private PurchaseOrderService purchaseOrderService;
+
+    @BeforeEach
+    void setUp() {
+        purchaseOrderService = new PurchaseOrderService(
+                purchaseOrderRepository,
+                supplierRepository,
+                productRepository
+        );
+    }
+
+    @Test
+    void createPurchaseOrderCalculatesSubtotalsAndTotal() {
+        when(supplierRepository.findById(SUPPLIER_ID)).thenReturn(Optional.of(supplier()));
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(PRODUCT_ID, "SKU-001")));
+        when(productRepository.findById(SECOND_PRODUCT_ID)).thenReturn(Optional.of(product(SECOND_PRODUCT_ID, "SKU-002")));
+        when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PurchaseOrder order = purchaseOrderService.create(new PurchaseOrderCreateDTO(
+                SUPPLIER_ID,
+                null,
+                LocalDate.now().plusDays(7),
+                "Pedido inicial",
+                List.of(
+                        new PurchaseOrderItemCreateDTO(PRODUCT_ID, 2, 10.0, null),
+                        new PurchaseOrderItemCreateDTO(SECOND_PRODUCT_ID, 3, 5.0, "Prioridade")
+                )
+        ));
+
+        assertThat(order.getStatus()).isEqualTo(PurchaseOrderStatus.DRAFT);
+        assertThat(order.getItems()).hasSize(2);
+        assertThat(order.getItems().get(0).getEstimatedSubtotal()).isEqualTo(20.0);
+        assertThat(order.getItems().get(1).getEstimatedSubtotal()).isEqualTo(15.0);
+        assertThat(order.getTotalEstimatedCost()).isEqualTo(35.0);
+        assertThat(order.getItems()).allSatisfy(item -> assertThat(item.getPurchaseOrder()).isSameAs(order));
+        verify(purchaseOrderRepository).save(order);
+    }
+
+    @Test
+    void createPurchaseOrderAllowsStatusWhenProvided() {
+        mockSupplierAndProduct();
+        when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PurchaseOrder order = purchaseOrderService.create(new PurchaseOrderCreateDTO(
+                SUPPLIER_ID,
+                PurchaseOrderStatus.SENT,
+                null,
+                null,
+                List.of(new PurchaseOrderItemCreateDTO(PRODUCT_ID, 1, 10.0, null))
+        ));
+
+        assertThat(order.getStatus()).isEqualTo(PurchaseOrderStatus.SENT);
+    }
+
+    @Test
+    void createPurchaseOrderThrowsWhenSupplierDoesNotExist() {
+        when(supplierRepository.findById(SUPPLIER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> purchaseOrderService.create(new PurchaseOrderCreateDTO(
+                SUPPLIER_ID,
+                null,
+                null,
+                null,
+                List.of(new PurchaseOrderItemCreateDTO(PRODUCT_ID, 1, 10.0, null))
+        ))).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Fornecedor com ID " + SUPPLIER_ID + " não encontrado.");
+
+        verify(productRepository, never()).findById(any());
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
+    @Test
+    void createPurchaseOrderThrowsWhenProductDoesNotExist() {
+        when(supplierRepository.findById(SUPPLIER_ID)).thenReturn(Optional.of(supplier()));
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> purchaseOrderService.create(new PurchaseOrderCreateDTO(
+                SUPPLIER_ID,
+                null,
+                null,
+                null,
+                List.of(new PurchaseOrderItemCreateDTO(PRODUCT_ID, 1, 10.0, null))
+        ))).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Produto com ID " + PRODUCT_ID + " não encontrado.");
+
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
+    @Test
+    void updatePurchaseOrderReplacesItemsAndRecalculatesTotal() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.DRAFT);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(productRepository.findById(SECOND_PRODUCT_ID)).thenReturn(Optional.of(product(SECOND_PRODUCT_ID, "SKU-002")));
+        when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PurchaseOrder updated = purchaseOrderService.update(PURCHASE_ORDER_ID, new PurchaseOrderUpdateDTO(
+                LocalDate.now().plusDays(10),
+                "Atualizado",
+                PurchaseOrderStatus.SENT,
+                List.of(new PurchaseOrderItemCreateDTO(SECOND_PRODUCT_ID, 4, 7.5, null))
+        ));
+
+        assertThat(updated.getStatus()).isEqualTo(PurchaseOrderStatus.SENT);
+        assertThat(updated.getItems()).hasSize(1);
+        assertThat(updated.getItems().get(0).getProduct().getId()).isEqualTo(SECOND_PRODUCT_ID);
+        assertThat(updated.getTotalEstimatedCost()).isEqualTo(30.0);
+        verify(purchaseOrderRepository).save(order);
+    }
+
+    @Test
+    void updatePurchaseOrderThrowsWhenOrderIsCancelled() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.CANCELLED);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> purchaseOrderService.update(PURCHASE_ORDER_ID, new PurchaseOrderUpdateDTO(
+                null,
+                "Não deve atualizar",
+                PurchaseOrderStatus.SENT,
+                List.of(new PurchaseOrderItemCreateDTO(PRODUCT_ID, 1, 10.0, null))
+        ))).isInstanceOf(BusinessException.class)
+                .hasMessage("Pedido cancelado não pode ser editado.");
+
+        verify(productRepository, never()).findById(any());
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
+    @Test
+    void cancelPurchaseOrderSetsStatusCancelled() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        purchaseOrderService.cancel(PURCHASE_ORDER_ID);
+
+        assertThat(order.getStatus()).isEqualTo(PurchaseOrderStatus.CANCELLED);
+        verify(purchaseOrderRepository).save(order);
+    }
+
+    @Test
+    void findBySupplierIdDelegatesToRepository() {
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(purchaseOrderRepository.findBySupplierId(SUPPLIER_ID, pageable)).thenReturn(Page.empty());
+
+        Page<PurchaseOrder> result = purchaseOrderService.findBySupplierId(SUPPLIER_ID, pageable);
+
+        assertThat(result).isEmpty();
+        verify(purchaseOrderRepository).findBySupplierId(SUPPLIER_ID, pageable);
+    }
+
+    @Test
+    void findByStatusDelegatesToRepository() {
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(purchaseOrderRepository.findByStatus(PurchaseOrderStatus.DRAFT, pageable)).thenReturn(Page.empty());
+
+        Page<PurchaseOrder> result = purchaseOrderService.findByStatus(PurchaseOrderStatus.DRAFT, pageable);
+
+        assertThat(result).isEmpty();
+        verify(purchaseOrderRepository).findByStatus(PurchaseOrderStatus.DRAFT, pageable);
+    }
+
+    private void mockSupplierAndProduct() {
+        when(supplierRepository.findById(SUPPLIER_ID)).thenReturn(Optional.of(supplier()));
+        when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(PRODUCT_ID, "SKU-001")));
+    }
+
+    private PurchaseOrder purchaseOrder(PurchaseOrderStatus status) {
+        return new PurchaseOrder(
+                supplier(),
+                status,
+                null,
+                null,
+                List.of(new com.luizotg.stock_manager.model.PurchaseOrderItem(
+                        product(PRODUCT_ID, "SKU-001"),
+                        1,
+                        10.0,
+                        null
+                ))
+        );
+    }
+
+    private Supplier supplier() {
+        return new Supplier(
+                SUPPLIER_ID,
+                "Fornecedor",
+                null,
+                null,
+                null,
+                null,
+                true,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private Product product(Long id, String sku) {
+        return new Product(
+                id,
+                sku,
+                "Produto " + id,
+                null,
+                "Marca",
+                null,
+                "UN",
+                10.0,
+                15.0,
+                true,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+}
