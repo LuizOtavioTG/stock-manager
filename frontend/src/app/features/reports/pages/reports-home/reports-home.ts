@@ -107,6 +107,14 @@ export class ReportsHomeComponent implements OnInit {
       route: '/relatorios/reposicao-sugerida'
     },
     {
+      title: 'Reposição por fornecedor',
+      description: 'Produtos para compra agrupados por fornecedor.',
+      icon: 'pi pi-truck',
+      tag: 'Compras',
+      tagSeverity: 'success',
+      route: '/relatorios/reposicao-por-fornecedor'
+    },
+    {
       title: 'Estoque excedente',
       description: 'Itens acima do limite máximo esperado.',
       icon: 'pi pi-arrow-up-right',

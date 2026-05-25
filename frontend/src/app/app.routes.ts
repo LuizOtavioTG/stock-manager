@@ -74,6 +74,14 @@ export const routes: Routes = [
     data: { title: 'Reposição sugerida', section: 'Relatórios' }
   },
   {
+    path: 'relatorios/reposicao-por-fornecedor',
+    loadComponent: () =>
+      import('./features/reports/pages/reorder-by-supplier-report/reorder-by-supplier-report').then(
+        (m) => m.ReorderBySupplierReportComponent
+      ),
+    data: { title: 'Reposição por fornecedor', section: 'Relatórios' }
+  },
+  {
     path: 'relatorios/movimentacoes',
     loadComponent: () =>
       import('./features/reports/pages/stock-movement-report/stock-movement-report').then(
