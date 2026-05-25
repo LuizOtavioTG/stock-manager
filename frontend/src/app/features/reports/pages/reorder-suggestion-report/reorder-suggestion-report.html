@@ -4,7 +4,16 @@
     <div>
       <h1>Reposição sugerida</h1>
       <div class="page-actions">
-        <button pButton type="button" icon="pi pi-download" label="Exportar CSV" outlined (click)="exportCsv()"></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-download"
+          [label]="isExporting() ? 'Exportando...' : 'Exportar CSV'"
+          outlined
+          [loading]="isExporting()"
+          [disabled]="isExporting()"
+          (click)="exportCsv()"
+        ></button>
         <button pButton type="button" icon="pi pi-refresh" label="Atualizar" text (click)="loadReport(reportPage().number, pageSize())"></button>
       </div>
     </div>

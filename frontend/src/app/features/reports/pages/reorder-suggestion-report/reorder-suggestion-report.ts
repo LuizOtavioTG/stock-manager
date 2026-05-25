@@ -81,6 +81,7 @@ export class ReorderSuggestionReportComponent implements OnInit {
   ];
 
   protected readonly isLoading = signal(false);
+  protected readonly isExporting = signal(false);
   protected readonly isLoadingProductOptions = signal(false);
   protected readonly isLoadingStorageLocationOptions = signal(false);
   protected readonly pageSize = signal(10);
@@ -179,20 +180,46 @@ export class ReorderSuggestionReportComponent implements OnInit {
   }
 
   protected exportCsv(): void {
-    const rows = this.items();
-
-    if (!rows.length) {
-      this.showEmptyExportWarning();
+    if (this.isExporting()) {
       return;
     }
 
+    const filters = this.filterForm.getRawValue();
+
+    this.isExporting.set(true);
+    this.inventoryAlertsService
+      .exportAllReorderNeeded({
+        productId: filters.productId,
+        storageLocationId: filters.storageLocationId,
+        sort: this.sort()
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => {
+          this.isExporting.set(false);
+
+          if (!rows.length) {
+            this.showEmptyExportWarning();
+            return;
+          }
+
+          this.exportRows(rows);
+        },
+        error: () => {
+          this.isExporting.set(false);
+          this.showExportError();
+        }
+      });
+  }
+
+  private exportRows(rows: InventoryAlertItem[]): void {
     this.csvExportService.exportToCsv('reposicao-sugerida.csv', rows, [
       { header: 'Produto', value: (row) => row.productName },
       { header: 'Local de estoque', value: (row) => row.storageLocationName },
       { header: 'Quantidade atual', value: (row) => row.quantity },
-      { header: 'Estoque minimo', value: (row) => row.minimumStock },
-      { header: 'Ponto de reposicao', value: (row) => row.reorderPoint },
-      { header: 'Estoque maximo', value: (row) => row.maximumStock },
+      { header: 'Estoque mínimo', value: (row) => row.minimumStock },
+      { header: 'Ponto de reposição', value: (row) => row.reorderPoint },
+      { header: 'Estoque máximo', value: (row) => row.maximumStock },
       { header: 'Quantidade sugerida', value: (row) => row.suggestedReorderQuantity },
       { header: 'Status', value: (row) => this.statusLabel(row.stockStatus) }
     ]);
@@ -295,6 +322,15 @@ export class ReorderSuggestionReportComponent implements OnInit {
       summary: 'Não há dados para exportar',
       detail: 'Carregue ou filtre dados antes de exportar o CSV.',
       life: 3000
+    });
+  }
+
+  private showExportError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao exportar relatório de reposição sugerida',
+      detail: 'Não foi possível gerar o CSV. Tente novamente.',
+      life: 5000
     });
   }
 
