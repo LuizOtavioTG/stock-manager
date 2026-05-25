@@ -1,9 +1,11 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin, of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -40,12 +42,30 @@ interface SummaryCard {
   icon: string;
 }
 
+interface PurchaseSuggestionItem {
+  productId: number | null;
+  productName: string | null;
+  storageLocationName: string | null;
+  currentQuantity: number;
+  suggestedQuantity: number;
+  unitCost: number | null;
+  estimatedSubtotal: number | null;
+}
+
+interface PurchaseSuggestion {
+  supplierId: number | null;
+  supplierName: string;
+  items: PurchaseSuggestionItem[];
+  estimatedTotal: number;
+}
+
 const NO_SUPPLIER_KEY = '__no_supplier__';
 
 @Component({
   selector: 'app-reorder-by-supplier-report',
   imports: [
     ButtonModule,
+    DialogModule,
     ReactiveFormsModule,
     SelectModule,
     TableModule,
@@ -62,12 +82,16 @@ export class ReorderBySupplierReportComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly productService = inject(ProductService);
   private readonly storageLocationService = inject(StorageLocationService);
+  private readonly productDetailsCache = new Map<number, Product>();
 
   protected readonly isLoading = signal(false);
   protected readonly isExporting = signal(false);
+  protected readonly isSuggestionLoading = signal(false);
+  protected readonly isSuggestionDialogVisible = signal(false);
   protected readonly isLoadingProductOptions = signal(false);
   protected readonly isLoadingStorageLocationOptions = signal(false);
   protected readonly allItems = signal<InventoryAlertItem[]>([]);
+  protected readonly purchaseSuggestion = signal<PurchaseSuggestion | null>(null);
   protected readonly supplierFilter = signal<string | null>(null);
   protected readonly productOptions = signal<ProductOption[]>([]);
   protected readonly storageLocationOptions = signal<StorageLocation[]>([]);
@@ -258,6 +282,78 @@ export class ReorderBySupplierReportComponent implements OnInit {
     this.isExporting.set(false);
   }
 
+  protected openPurchaseSuggestion(group: SupplierReorderGroup): void {
+    this.isSuggestionDialogVisible.set(true);
+    this.isSuggestionLoading.set(true);
+    this.purchaseSuggestion.set(null);
+
+    const productIds = Array.from(
+      new Set(
+        group.items
+          .map((item) => item.productId)
+          .filter((productId): productId is number => productId !== null)
+      )
+    );
+    const missingProductIds = productIds.filter((productId) => !this.productDetailsCache.has(productId));
+
+    const detailsRequest = missingProductIds.length
+      ? forkJoin(missingProductIds.map((productId) => this.productService.getProductById(productId)))
+      : of([]);
+
+    detailsRequest
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (products) => {
+          products.forEach((product) => this.productDetailsCache.set(product.id, product));
+          this.purchaseSuggestion.set(this.buildPurchaseSuggestion(group));
+          this.isSuggestionLoading.set(false);
+        },
+        error: () => {
+          this.isSuggestionDialogVisible.set(false);
+          this.isSuggestionLoading.set(false);
+          this.showSuggestionError();
+        }
+      });
+  }
+
+  protected exportPurchaseSuggestionCsv(): void {
+    const suggestion = this.purchaseSuggestion();
+
+    if (!suggestion?.items.length) {
+      this.showEmptyExportWarning();
+      return;
+    }
+
+    this.csvExportService.exportToCsv(`sugestao-pedido-${this.filenameSlug(suggestion.supplierName)}.csv`, suggestion.items, [
+      { header: 'Fornecedor', value: () => suggestion.supplierName },
+      { header: 'Produto', value: (row) => row.productName },
+      { header: 'Local de estoque', value: (row) => row.storageLocationName },
+      { header: 'Quantidade atual', value: (row) => row.currentQuantity },
+      { header: 'Quantidade sugerida', value: (row) => row.suggestedQuantity },
+      { header: 'Custo unitário', value: (row) => row.unitCost },
+      { header: 'Subtotal estimado', value: (row) => row.estimatedSubtotal }
+    ]);
+  }
+
+  protected suggestionTotalQuantity(): number {
+    return this.purchaseSuggestion()?.items.reduce((total, item) => total + item.suggestedQuantity, 0) ?? 0;
+  }
+
+  protected hasProductsWithoutCost(): boolean {
+    return this.purchaseSuggestion()?.items.some((item) => item.unitCost === null) ?? false;
+  }
+
+  protected currencyValue(value: number | null): string {
+    if (value === null) {
+      return '-';
+    }
+
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  }
+
   protected statusLabel(status: StockStatus): string {
     const labels: Record<StockStatus, string> = {
       OUT_OF_STOCK: 'Sem estoque',
@@ -332,6 +428,39 @@ export class ReorderBySupplierReportComponent implements OnInit {
     };
   }
 
+  private buildPurchaseSuggestion(group: SupplierReorderGroup): PurchaseSuggestion {
+    const items = group.items.map<PurchaseSuggestionItem>((item) => {
+      const unitCost = item.productId ? this.productDetailsCache.get(item.productId)?.costPrice ?? null : null;
+      const estimatedSubtotal = unitCost !== null ? item.suggestedReorderQuantity * unitCost : null;
+
+      return {
+        productId: item.productId,
+        productName: item.productName,
+        storageLocationName: item.storageLocationName,
+        currentQuantity: item.quantity,
+        suggestedQuantity: item.suggestedReorderQuantity,
+        unitCost,
+        estimatedSubtotal
+      };
+    });
+
+    return {
+      supplierId: group.supplierId,
+      supplierName: group.supplierName,
+      items,
+      estimatedTotal: items.reduce((total, item) => total + (item.estimatedSubtotal ?? 0), 0)
+    };
+  }
+
+  private filenameSlug(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'fornecedor';
+  }
+
   private showLoadError(): void {
     this.messageService.add({
       severity: 'error',
@@ -347,6 +476,15 @@ export class ReorderBySupplierReportComponent implements OnInit {
       summary: 'Não há dados para exportar',
       detail: 'Carregue ou filtre dados antes de exportar o CSV.',
       life: 3000
+    });
+  }
+
+  private showSuggestionError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao gerar sugestão de pedido',
+      detail: 'Não foi possível buscar os custos dos produtos. Tente novamente.',
+      life: 5000
     });
   }
 
