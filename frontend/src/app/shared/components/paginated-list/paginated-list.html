@@ -22,6 +22,10 @@
   </div>
 </section>
 
+@if (toolbarTemplate) {
+  <ng-container *ngTemplateOutlet="toolbarTemplate.templateRef"></ng-container>
+}
+
 <p-card styleClass="paginated-list-card">
   <ng-template #title>
     <div class="paginated-list-card__title">

@@ -47,6 +47,13 @@ export class PaginatedListActionsDirective {
   constructor(readonly templateRef: TemplateRef<unknown>) {}
 }
 
+@Directive({
+  selector: 'ng-template[appPaginatedListToolbar]'
+})
+export class PaginatedListToolbarDirective {
+  constructor(readonly templateRef: TemplateRef<unknown>) {}
+}
+
 @Component({
   selector: 'app-paginated-list',
   standalone: true,
@@ -82,6 +89,9 @@ export class PaginatedListComponent {
 
   @ContentChild(PaginatedListActionsDirective)
   protected readonly actionsTemplate?: PaginatedListActionsDirective;
+
+  @ContentChild(PaginatedListToolbarDirective)
+  protected readonly toolbarTemplate?: PaginatedListToolbarDirective;
 
   protected bodyContext(item: unknown): { $implicit: unknown } {
     return { $implicit: item };

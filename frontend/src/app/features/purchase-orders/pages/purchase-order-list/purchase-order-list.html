@@ -1,0 +1,312 @@
+<app-paginated-list
+  section="Compras"
+  pageTitle="Pedidos de compra"
+  cardTitle="Pedidos cadastrados"
+  [value]="purchaseOrders()"
+  [loading]="isLoading()"
+  [rows]="pageSize()"
+  [first]="first()"
+  [totalRecords]="totalElements()"
+  [tableStyle]="{ 'min-width': '76rem' }"
+  [columns]="columns"
+  (refresh)="loadPurchaseOrders(purchaseOrdersPage().number, pageSize())"
+  (lazyLoad)="onPageChange($event)"
+>
+  <ng-template appPaginatedListActions>
+    <button pButton type="button" icon="pi pi-plus" label="Novo pedido" (click)="openCreateDialog()"></button>
+  </ng-template>
+
+  <ng-template appPaginatedListToolbar>
+    <section class="filters-card" aria-label="Filtros de pedidos de compra">
+      <div class="filter-field">
+        <span>Fornecedor</span>
+        <p-select
+          [formControl]="filterForm.controls.supplierId"
+          [options]="supplierOptions()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Todos"
+          showClear
+          appendTo="body"
+          [loading]="isLoadingSupplierOptions()"
+          (onChange)="onSupplierFilterChange($event.value)"
+        />
+      </div>
+
+      <div class="filter-field">
+        <span>Status</span>
+        <p-select
+          [formControl]="filterForm.controls.status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos"
+          showClear
+          appendTo="body"
+          (onChange)="onStatusFilterChange($event.value)"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button pButton type="button" icon="pi pi-filter" label="Aplicar filtros" (click)="applyFilters()"></button>
+        <button pButton type="button" severity="secondary" outlined icon="pi pi-filter-slash" label="Limpar filtros" (click)="clearFilters()"></button>
+      </div>
+    </section>
+  </ng-template>
+
+  <ng-template appPaginatedListBody let-order>
+    <tr>
+      <td>#{{ order.id }}</td>
+      <td>
+        <div class="item-cell">
+          <strong>{{ order.supplierName || 'Fornecedor não informado' }}</strong>
+          <span>ID {{ order.supplierId }}</span>
+        </div>
+      </td>
+      <td>
+        <p-tag [severity]="statusSeverity(order.status)" [value]="statusLabel(order.status)" />
+      </td>
+      <td>{{ order.orderDate ? (order.orderDate | date: 'dd/MM/yyyy') : '-' }}</td>
+      <td>{{ order.expectedDeliveryDate ? (order.expectedDeliveryDate | date: 'dd/MM/yyyy') : '-' }}</td>
+      <td class="numeric-column">{{ order.totalEstimatedCost | currency: 'BRL':'symbol':'1.2-2' }}</td>
+      <td>{{ order.createdAt ? (order.createdAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
+      <td>
+        <div class="row-actions">
+          <button pButton type="button" text rounded icon="pi pi-eye" aria-label="Visualizar" title="Visualizar" (click)="openDetailsDialog(order)"></button>
+          @if (canEdit(order)) {
+            <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="openEditDialog(order)"></button>
+          }
+          @if (canCancel(order)) {
+            <button pButton type="button" text rounded severity="danger" icon="pi pi-ban" aria-label="Cancelar" title="Cancelar" (click)="confirmCancelOrder(order)"></button>
+          }
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template appPaginatedListEmpty>
+    <tr>
+      <td colspan="8">
+        <div class="empty-state">
+          <i class="pi pi-shopping-cart" aria-hidden="true"></i>
+          <strong>Nenhum pedido de compra encontrado</strong>
+          <span>Cadastre pedidos para acompanhar compras de fornecedores.</span>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+</app-paginated-list>
+
+<p-confirmDialog />
+
+<p-dialog
+  [header]="formTitle()"
+  modal
+  [visible]="isFormDialogVisible()"
+  [style]="{ width: 'min(70rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isFormDialogVisible.set($event)"
+>
+  <form class="purchase-order-form" [formGroup]="purchaseOrderForm" (ngSubmit)="savePurchaseOrder()">
+    <section class="order-fields">
+      <label class="form-field">
+        <span>Fornecedor</span>
+        <p-select
+          formControlName="supplierId"
+          [options]="supplierOptions()"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Selecione"
+          appendTo="body"
+          [loading]="isLoadingSupplierOptions()"
+        />
+        @if (shouldShowOrderError('supplierId')) {
+          <small>Selecione um fornecedor.</small>
+        }
+      </label>
+
+      <label class="form-field">
+        <span>Status</span>
+        <p-select formControlName="status" [options]="statusOptions" optionLabel="label" optionValue="value" appendTo="body" />
+      </label>
+
+      <label class="form-field">
+        <span>Entrega prevista</span>
+        <input pInputText type="date" formControlName="expectedDeliveryDate" />
+      </label>
+
+      <label class="form-field form-field__full">
+        <span>Observações</span>
+        <textarea pTextarea rows="3" maxlength="500" formControlName="notes"></textarea>
+        @if (shouldShowOrderError('notes')) {
+          <small>As observações devem ter no máximo 500 caracteres.</small>
+        }
+      </label>
+    </section>
+
+    <section class="items-section" formArrayName="items">
+      <div class="items-section__header">
+        <div>
+          <h3>Itens do pedido</h3>
+          <span>{{ itemForms.length }} item(ns)</span>
+        </div>
+        <button pButton type="button" icon="pi pi-plus" label="Adicionar item" size="small" (click)="addItem()"></button>
+      </div>
+
+      @if (itemForms.hasError('minItems') && (itemForms.dirty || itemForms.touched)) {
+        <small class="array-error">Adicione pelo menos um item ao pedido.</small>
+      }
+
+      <div class="item-form-list">
+        @for (itemForm of itemForms.controls; track $index; let index = $index) {
+          <div class="item-form" [formGroupName]="index">
+            <label class="form-field item-form__product">
+              <span>Produto</span>
+              <p-select
+                formControlName="productId"
+                [options]="productOptions()"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Selecione"
+                appendTo="body"
+                [loading]="isLoadingProductOptions()"
+                (onChange)="onProductSelected(index, $event.value)"
+              />
+              @if (shouldShowItemError(itemForm, 'productId')) {
+                <small>Selecione um produto.</small>
+              }
+            </label>
+
+            <label class="form-field">
+              <span>Quantidade</span>
+              <p-inputNumber formControlName="quantity" [min]="1" [showButtons]="true" />
+              @if (shouldShowItemError(itemForm, 'quantity')) {
+                <small>Informe uma quantidade maior que zero.</small>
+              }
+            </label>
+
+            <label class="form-field">
+              <span>Custo unitário</span>
+              <p-inputNumber formControlName="unitCost" mode="currency" currency="BRL" locale="pt-BR" [min]="0" />
+              @if (shouldShowItemError(itemForm, 'unitCost')) {
+                <small>Informe um custo maior ou igual a zero.</small>
+              }
+            </label>
+
+            <div class="subtotal-box">
+              <span>Subtotal</span>
+              <strong>{{ itemSubtotal(itemForm) | currency: 'BRL':'symbol':'1.2-2' }}</strong>
+            </div>
+
+            <label class="form-field item-form__notes">
+              <span>Observações</span>
+              <input pInputText type="text" maxlength="500" formControlName="notes" />
+              @if (shouldShowItemError(itemForm, 'notes')) {
+                <small>As observações devem ter no máximo 500 caracteres.</small>
+              }
+            </label>
+
+            <button
+              pButton
+              type="button"
+              text
+              rounded
+              severity="danger"
+              icon="pi pi-trash"
+              aria-label="Remover item"
+              title="Remover item"
+              (click)="removeItem(index)"
+            ></button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <footer class="form-footer">
+      <div class="order-total">
+        <span>Total estimado</span>
+        <strong>{{ formTotal() | currency: 'BRL':'symbol':'1.2-2' }}</strong>
+      </div>
+
+      <div class="form-actions">
+        <button pButton type="button" label="Cancelar" severity="secondary" text (click)="isFormDialogVisible.set(false)"></button>
+        <button pButton type="submit" label="Salvar" icon="pi pi-check" [loading]="isSaving()"></button>
+      </div>
+    </footer>
+  </form>
+</p-dialog>
+
+<p-dialog
+  header="Detalhes do pedido de compra"
+  modal
+  [visible]="isDetailsDialogVisible()"
+  [style]="{ width: 'min(64rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isDetailsDialogVisible.set($event)"
+>
+  @if (isDetailsLoading()) {
+    <div class="details-loading">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      <span>Carregando pedido...</span>
+    </div>
+  } @else if (selectedPurchaseOrder(); as order) {
+    <dl class="purchase-order-details">
+      <div>
+        <dt>Fornecedor</dt>
+        <dd>{{ order.supplierName || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd><p-tag [severity]="statusSeverity(order.status)" [value]="statusLabel(order.status)" /></dd>
+      </div>
+      <div>
+        <dt>Data do pedido</dt>
+        <dd>{{ order.orderDate ? (order.orderDate | date: 'dd/MM/yyyy') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Entrega prevista</dt>
+        <dd>{{ order.expectedDeliveryDate ? (order.expectedDeliveryDate | date: 'dd/MM/yyyy') : '-' }}</dd>
+      </div>
+      <div class="purchase-order-details__full">
+        <dt>Observações</dt>
+        <dd>{{ order.notes || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Total estimado</dt>
+        <dd>{{ order.totalEstimatedCost | currency: 'BRL':'symbol':'1.2-2' }}</dd>
+      </div>
+      <div>
+        <dt>Criado em</dt>
+        <dd>{{ order.createdAt ? (order.createdAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+      <div>
+        <dt>Atualizado em</dt>
+        <dd>{{ order.updatedAt ? (order.updatedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</dd>
+      </div>
+    </dl>
+
+    <section class="details-items">
+      <h3>Itens</h3>
+      <p-table [value]="order.items" [tableStyle]="{ 'min-width': '48rem' }" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Produto</th>
+            <th>SKU</th>
+            <th class="numeric-column">Quantidade</th>
+            <th class="numeric-column">Custo unitário</th>
+            <th class="numeric-column">Subtotal</th>
+            <th>Observações</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td>{{ item.productName || '-' }}</td>
+            <td>{{ item.productSku || '-' }}</td>
+            <td class="numeric-column">{{ item.quantity }}</td>
+            <td class="numeric-column">{{ item.unitCost | currency: 'BRL':'symbol':'1.2-2' }}</td>
+            <td class="numeric-column">{{ item.estimatedSubtotal | currency: 'BRL':'symbol':'1.2-2' }}</td>
+            <td>{{ item.notes || '-' }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </section>
+  }
+</p-dialog>

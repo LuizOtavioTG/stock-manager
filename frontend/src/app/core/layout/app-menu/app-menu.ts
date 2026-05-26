@@ -33,6 +33,10 @@ export class AppMenuComponent {
       ]
     },
     {
+      label: 'Compras',
+      items: [{ label: 'Pedidos de compra', icon: 'pi pi-fw pi-shopping-cart', routerLink: ['/compras/pedidos'] }]
+    },
+    {
       label: 'Análises',
       items: [{ label: 'Relatórios', icon: 'pi pi-fw pi-chart-bar', routerLink: ['/relatorios'] }]
     }

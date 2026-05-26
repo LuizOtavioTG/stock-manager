@@ -60,6 +60,14 @@ export const routes: Routes = [
     data: { title: 'Locais de estoque', section: 'Cadastros' }
   },
   {
+    path: 'compras/pedidos',
+    loadComponent: () =>
+      import('./features/purchase-orders/pages/purchase-order-list/purchase-order-list').then(
+        (m) => m.PurchaseOrderListComponent
+      ),
+    data: { title: 'Pedidos de compra', section: 'Compras' }
+  },
+  {
     path: 'relatorios',
     loadComponent: () =>
       import('./features/reports/pages/reports-home/reports-home').then((m) => m.ReportsHomeComponent),
