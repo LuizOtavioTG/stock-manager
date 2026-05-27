@@ -1,10 +1,12 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -15,6 +17,8 @@ import { InventoryAlertItem, StockStatus } from '../../../inventory/models/inven
 import { InventoryAlertsService } from '../../../inventory/services/inventory-alerts.service';
 import { Product } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
+import { PurchaseOrderItemRequest } from '../../../purchase-orders/models/purchase-order-request.model';
+import { PurchaseOrderService } from '../../../purchase-orders/services/purchase-order.service';
 import { StorageLocation } from '../../../storage-locations/models/storage-location.model';
 import { StorageLocationService } from '../../../storage-locations/services/storage-location.service';
 
@@ -65,6 +69,7 @@ const NO_SUPPLIER_KEY = '__no_supplier__';
   selector: 'app-reorder-by-supplier-report',
   imports: [
     ButtonModule,
+    ConfirmDialogModule,
     DialogModule,
     ReactiveFormsModule,
     SelectModule,
@@ -75,17 +80,21 @@ const NO_SUPPLIER_KEY = '__no_supplier__';
   styleUrl: './reorder-by-supplier-report.scss'
 })
 export class ReorderBySupplierReportComponent implements OnInit {
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly csvExportService = inject(CsvExportService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly inventoryAlertsService = inject(InventoryAlertsService);
   private readonly messageService = inject(MessageService);
   private readonly productService = inject(ProductService);
+  private readonly purchaseOrderService = inject(PurchaseOrderService);
+  private readonly router = inject(Router);
   private readonly storageLocationService = inject(StorageLocationService);
   private readonly productDetailsCache = new Map<number, Product>();
 
   protected readonly isLoading = signal(false);
   protected readonly isExporting = signal(false);
+  protected readonly isCreatingPurchaseOrder = signal(false);
   protected readonly isSuggestionLoading = signal(false);
   protected readonly isSuggestionDialogVisible = signal(false);
   protected readonly isLoadingProductOptions = signal(false);
@@ -335,6 +344,23 @@ export class ReorderBySupplierReportComponent implements OnInit {
     ]);
   }
 
+  protected confirmCreatePurchaseOrder(): void {
+    const suggestion = this.purchaseSuggestion();
+
+    if (!suggestion || suggestion.supplierId === null) {
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: 'Criar pedido de compra',
+      message: 'Deseja criar um pedido de compra em rascunho para este fornecedor?',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Criar pedido',
+      rejectLabel: 'Cancelar',
+      accept: () => this.createPurchaseOrderFromSuggestion(suggestion)
+    });
+  }
+
   protected suggestionTotalQuantity(): number {
     return this.purchaseSuggestion()?.items.reduce((total, item) => total + item.suggestedQuantity, 0) ?? 0;
   }
@@ -452,6 +478,52 @@ export class ReorderBySupplierReportComponent implements OnInit {
     };
   }
 
+  private createPurchaseOrderFromSuggestion(suggestion: PurchaseSuggestion): void {
+    if (suggestion.supplierId === null || this.isCreatingPurchaseOrder()) {
+      return;
+    }
+
+    const items = this.validPurchaseOrderItems(suggestion);
+
+    if (!items.length) {
+      this.showInvalidPurchaseOrderItemsWarning();
+      return;
+    }
+
+    this.isCreatingPurchaseOrder.set(true);
+    this.purchaseOrderService
+      .createPurchaseOrder({
+        supplierId: suggestion.supplierId,
+        status: 'DRAFT',
+        expectedDeliveryDate: null,
+        notes: 'Pedido gerado a partir do relatório de reposição por fornecedor.',
+        items
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isCreatingPurchaseOrder.set(false);
+          this.showPurchaseOrderCreatedSuccess();
+          this.router.navigate(['/compras/pedidos']);
+        },
+        error: () => {
+          this.isCreatingPurchaseOrder.set(false);
+          this.showPurchaseOrderCreateError();
+        }
+      });
+  }
+
+  private validPurchaseOrderItems(suggestion: PurchaseSuggestion): PurchaseOrderItemRequest[] {
+    return suggestion.items
+      .filter((item) => item.productId !== null && item.unitCost !== null && item.suggestedQuantity > 0)
+      .map((item) => ({
+        productId: item.productId as number,
+        quantity: item.suggestedQuantity,
+        unitCost: item.unitCost as number,
+        notes: item.storageLocationName ? `Reposição sugerida para ${item.storageLocationName}` : null
+      }));
+  }
+
   private filenameSlug(value: string): string {
     return value
       .normalize('NFD')
@@ -476,6 +548,33 @@ export class ReorderBySupplierReportComponent implements OnInit {
       summary: 'Não há dados para exportar',
       detail: 'Carregue ou filtre dados antes de exportar o CSV.',
       life: 3000
+    });
+  }
+
+  private showInvalidPurchaseOrderItemsWarning(): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Não há itens válidos para criar o pedido',
+      detail: 'Itens sem produto, sem custo ou sem quantidade sugerida foram ignorados.',
+      life: 4000
+    });
+  }
+
+  private showPurchaseOrderCreatedSuccess(): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Sucesso',
+      detail: 'Pedido de compra criado com sucesso.',
+      life: 3000
+    });
+  }
+
+  private showPurchaseOrderCreateError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao criar pedido de compra',
+      detail: 'Não foi possível criar o pedido de compra. Verifique os dados e tente novamente.',
+      life: 5000
     });
   }
 

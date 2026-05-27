@@ -157,6 +157,8 @@
   }
 </section>
 
+<p-confirmDialog />
+
 <p-dialog
   [header]="'Sugestão de pedido - ' + (purchaseSuggestion()?.supplierName || '')"
   modal
@@ -221,6 +223,17 @@
     </p-table>
 
     <ng-template pTemplate="footer">
+      @if (suggestion.supplierId !== null) {
+        <button
+          pButton
+          type="button"
+          icon="pi pi-shopping-cart"
+          [label]="isCreatingPurchaseOrder() ? 'Criando...' : 'Criar pedido de compra'"
+          [loading]="isCreatingPurchaseOrder()"
+          [disabled]="isCreatingPurchaseOrder()"
+          (click)="confirmCreatePurchaseOrder()"
+        ></button>
+      }
       <button
         pButton
         type="button"
