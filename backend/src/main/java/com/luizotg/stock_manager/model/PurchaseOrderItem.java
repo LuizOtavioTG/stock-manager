@@ -49,6 +49,9 @@ public class PurchaseOrderItem {
     private Integer quantity;
 
     @Column(nullable = false)
+    private Integer receivedQuantity = 0;
+
+    @Column(nullable = false)
     private Double unitCost;
 
     @Column(nullable = false)
@@ -74,6 +77,7 @@ public class PurchaseOrderItem {
     public PurchaseOrderItem(Product product, Integer quantity, Double unitCost, String notes) {
         this.product = product;
         this.quantity = quantity;
+        this.receivedQuantity = 0;
         this.unitCost = unitCost;
         this.notes = notes;
         recalculateSubtotal();
@@ -85,5 +89,17 @@ public class PurchaseOrderItem {
 
     void recalculateSubtotal() {
         this.estimatedSubtotal = quantity * unitCost;
+    }
+
+    public Integer getPendingQuantity() {
+        return quantity - receivedQuantity;
+    }
+
+    public void receive(Integer quantity) {
+        if (quantity > getPendingQuantity()) {
+            throw new IllegalArgumentException("Quantidade recebida não pode ser maior que a quantidade pendente.");
+        }
+
+        this.receivedQuantity += quantity;
     }
 }

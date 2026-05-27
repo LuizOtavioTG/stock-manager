@@ -2,7 +2,10 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderItemCreateDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveItemDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.exception.BusinessException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
@@ -26,15 +29,18 @@ public class PurchaseOrderService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
+    private final StockMovementService stockMovementService;
 
     public PurchaseOrderService(
             PurchaseOrderRepository purchaseOrderRepository,
             SupplierRepository supplierRepository,
-            ProductRepository productRepository
+            ProductRepository productRepository,
+            StockMovementService stockMovementService
     ) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.supplierRepository = supplierRepository;
         this.productRepository = productRepository;
+        this.stockMovementService = stockMovementService;
     }
 
     public Page<PurchaseOrder> findAll(Pageable pageable) {
@@ -93,6 +99,21 @@ public class PurchaseOrderService {
         purchaseOrderRepository.save(purchaseOrder);
     }
 
+    @Transactional
+    public PurchaseOrder receive(Long id, PurchaseOrderReceiveDTO dto) {
+        PurchaseOrder purchaseOrder = findById(id);
+        validateReceivablePurchaseOrder(purchaseOrder);
+
+        if (dto.items() == null || dto.items().isEmpty()) {
+            throw new BusinessException("Recebimento deve ter pelo menos um item.");
+        }
+
+        dto.items().forEach(itemDto -> receiveItem(purchaseOrder, dto.storageLocationId(), itemDto, dto.notes()));
+        purchaseOrder.updateStatusAfterReceiving();
+
+        return purchaseOrderRepository.save(purchaseOrder);
+    }
+
     private List<PurchaseOrderItem> buildItems(List<PurchaseOrderItemCreateDTO> itemDtos) {
         if (itemDtos == null || itemDtos.isEmpty()) {
             throw new BusinessException("Pedido deve ter pelo menos um item.");
@@ -108,5 +129,47 @@ public class PurchaseOrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Produto com ID " + dto.productId() + " não encontrado."));
 
         return new PurchaseOrderItem(product, dto.quantity(), dto.unitCost(), dto.notes());
+    }
+
+    private void validateReceivablePurchaseOrder(PurchaseOrder purchaseOrder) {
+        if (purchaseOrder.isCancelled()) {
+            throw new BusinessException("Pedido cancelado não pode ser recebido.");
+        }
+
+        if (purchaseOrder.isReceived()) {
+            throw new BusinessException("Pedido já recebido não pode ser recebido novamente.");
+        }
+    }
+
+    private void receiveItem(
+            PurchaseOrder purchaseOrder,
+            Long storageLocationId,
+            PurchaseOrderReceiveItemDTO itemDto,
+            String notes
+    ) {
+        PurchaseOrderItem item = findPurchaseOrderItem(purchaseOrder, itemDto.purchaseOrderItemId());
+
+        if (itemDto.receivedQuantity() > item.getPendingQuantity()) {
+            throw new BusinessException("Quantidade recebida não pode ser maior que a quantidade pendente do item.");
+        }
+
+        stockMovementService.registerInbound(new StockInboundRequestDTO(
+                item.getProduct().getId(),
+                storageLocationId,
+                itemDto.receivedQuantity(),
+                "Recebimento de pedido de compra",
+                "PURCHASE-ORDER-" + purchaseOrder.getId(),
+                "Sistema",
+                notes
+        ));
+
+        item.receive(itemDto.receivedQuantity());
+    }
+
+    private PurchaseOrderItem findPurchaseOrderItem(PurchaseOrder purchaseOrder, Long purchaseOrderItemId) {
+        return purchaseOrder.getItems().stream()
+                .filter(item -> purchaseOrderItemId.equals(item.getId()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("Item informado não pertence ao pedido."));
     }
 }

@@ -2,11 +2,15 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderItemCreateDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveItemDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
 import com.luizotg.stock_manager.exception.BusinessException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.PurchaseOrder;
+import com.luizotg.stock_manager.model.PurchaseOrderItem;
 import com.luizotg.stock_manager.model.PurchaseOrderStatus;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.ProductRepository;
@@ -19,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +32,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,6 +54,9 @@ class PurchaseOrderServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private StockMovementService stockMovementService;
+
     private PurchaseOrderService purchaseOrderService;
 
     @BeforeEach
@@ -55,7 +64,8 @@ class PurchaseOrderServiceTest {
         purchaseOrderService = new PurchaseOrderService(
                 purchaseOrderRepository,
                 supplierRepository,
-                productRepository
+                productRepository,
+                stockMovementService
         );
     }
 
@@ -208,24 +218,151 @@ class PurchaseOrderServiceTest {
         verify(purchaseOrderRepository).findByStatus(PurchaseOrderStatus.DRAFT, pageable);
     }
 
+    @Test
+    void receivePurchaseOrderPartiallyCreatesInboundMovementAndUpdatesStatus() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PurchaseOrder received = purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
+                30L,
+                List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 4)),
+                "NF 123"
+        ));
+
+        assertThat(item.getReceivedQuantity()).isEqualTo(4);
+        assertThat(item.getPendingQuantity()).isEqualTo(6);
+        assertThat(received.getStatus()).isEqualTo(PurchaseOrderStatus.PARTIALLY_RECEIVED);
+        verify(stockMovementService).registerInbound(argThat((StockInboundRequestDTO dto) ->
+                dto.productId().equals(PRODUCT_ID)
+                        && dto.storageLocationId().equals(30L)
+                        && dto.quantity().equals(4)
+                        && dto.reason().equals("Recebimento de pedido de compra")
+                        && dto.reference().equals("PURCHASE-ORDER-" + PURCHASE_ORDER_ID)
+                        && dto.responsible().equals("Sistema")
+                        && dto.notes().equals("NF 123")
+        ));
+        verify(purchaseOrderRepository).save(order);
+    }
+
+    @Test
+    void receivePurchaseOrderTotallySetsStatusReceived() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PurchaseOrder received = purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
+                30L,
+                List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 10)),
+                null
+        ));
+
+        assertThat(item.getReceivedQuantity()).isEqualTo(10);
+        assertThat(item.getPendingQuantity()).isZero();
+        assertThat(received.getStatus()).isEqualTo(PurchaseOrderStatus.RECEIVED);
+        verify(stockMovementService).registerInbound(any(StockInboundRequestDTO.class));
+    }
+
+    @Test
+    void receiveCancelledPurchaseOrderThrows() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.CANCELLED, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
+                30L,
+                List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 1)),
+                null
+        ))).isInstanceOf(BusinessException.class)
+                .hasMessage("Pedido cancelado não pode ser recebido.");
+
+        verify(stockMovementService, never()).registerInbound(any(StockInboundRequestDTO.class));
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
+    @Test
+    void receiveAlreadyReceivedPurchaseOrderThrows() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.RECEIVED, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
+                30L,
+                List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 1)),
+                null
+        ))).isInstanceOf(BusinessException.class)
+                .hasMessage("Pedido já recebido não pode ser recebido novamente.");
+
+        verify(stockMovementService, never()).registerInbound(any(StockInboundRequestDTO.class));
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
+    @Test
+    void receiveItemThatDoesNotBelongToPurchaseOrderThrows() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT, 10);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
+                30L,
+                List.of(new PurchaseOrderReceiveItemDTO(999L, 1)),
+                null
+        ))).isInstanceOf(BusinessException.class)
+                .hasMessage("Item informado não pertence ao pedido.");
+
+        verify(stockMovementService, never()).registerInbound(any(StockInboundRequestDTO.class));
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
+    @Test
+    void receiveQuantityGreaterThanPendingThrows() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        item.receive(8);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
+                30L,
+                List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 3)),
+                null
+        ))).isInstanceOf(BusinessException.class)
+                .hasMessage("Quantidade recebida não pode ser maior que a quantidade pendente do item.");
+
+        assertThat(item.getReceivedQuantity()).isEqualTo(8);
+        assertThat(item.getPendingQuantity()).isEqualTo(2);
+        verify(stockMovementService, never()).registerInbound(any(StockInboundRequestDTO.class));
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
     private void mockSupplierAndProduct() {
         when(supplierRepository.findById(SUPPLIER_ID)).thenReturn(Optional.of(supplier()));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(PRODUCT_ID, "SKU-001")));
     }
 
     private PurchaseOrder purchaseOrder(PurchaseOrderStatus status) {
-        return new PurchaseOrder(
+        return purchaseOrder(status, 1);
+    }
+
+    private PurchaseOrder purchaseOrder(PurchaseOrderStatus status, int quantity) {
+        PurchaseOrderItem item = new PurchaseOrderItem(
+                product(PRODUCT_ID, "SKU-001"),
+                quantity,
+                10.0,
+                null
+        );
+        ReflectionTestUtils.setField(item, "id", 100L);
+
+        PurchaseOrder order = new PurchaseOrder(
                 supplier(),
                 status,
                 null,
                 null,
-                List.of(new com.luizotg.stock_manager.model.PurchaseOrderItem(
-                        product(PRODUCT_ID, "SKU-001"),
-                        1,
-                        10.0,
-                        null
-                ))
+                List.of(item)
         );
+        ReflectionTestUtils.setField(order, "id", PURCHASE_ORDER_ID);
+
+        return order;
     }
 
     private Supplier supplier() {

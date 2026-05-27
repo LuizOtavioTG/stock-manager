@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.controller;
 
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderDetailDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
 import com.luizotg.stock_manager.model.PurchaseOrder;
 import com.luizotg.stock_manager.model.PurchaseOrderStatus;
@@ -90,6 +91,15 @@ public class PurchaseOrderController {
     public ResponseEntity<PurchaseOrderDetailDTO> cancel(@PathVariable Long id) {
         purchaseOrderService.cancel(id);
         PurchaseOrder purchaseOrder = purchaseOrderService.findById(id);
+        return ResponseEntity.ok(new PurchaseOrderDetailDTO(purchaseOrder));
+    }
+
+    @PostMapping("/{id}/receive")
+    public ResponseEntity<PurchaseOrderDetailDTO> receive(
+            @PathVariable Long id,
+            @RequestBody @Valid PurchaseOrderReceiveDTO dto
+    ) {
+        PurchaseOrder purchaseOrder = purchaseOrderService.receive(id, dto);
         return ResponseEntity.ok(new PurchaseOrderDetailDTO(purchaseOrder));
     }
 }

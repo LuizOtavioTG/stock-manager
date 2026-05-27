@@ -113,6 +113,10 @@ public class PurchaseOrder {
         return PurchaseOrderStatus.CANCELLED.equals(status);
     }
 
+    public boolean isReceived() {
+        return PurchaseOrderStatus.RECEIVED.equals(status);
+    }
+
     public void update(LocalDate expectedDeliveryDate, String notes, PurchaseOrderStatus status, List<PurchaseOrderItem> items) {
         if (expectedDeliveryDate != null) {
             this.expectedDeliveryDate = expectedDeliveryDate;
@@ -128,6 +132,11 @@ public class PurchaseOrder {
 
     public void cancel() {
         this.status = PurchaseOrderStatus.CANCELLED;
+    }
+
+    public void updateStatusAfterReceiving() {
+        boolean hasPendingItems = items.stream().anyMatch(item -> item.getPendingQuantity() > 0);
+        this.status = hasPendingItems ? PurchaseOrderStatus.PARTIALLY_RECEIVED : PurchaseOrderStatus.RECEIVED;
     }
 
     public void replaceItems(List<PurchaseOrderItem> newItems) {

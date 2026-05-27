@@ -9,6 +9,8 @@ public record PurchaseOrderItemDetailDTO(
         String productName,
         String productSku,
         Integer quantity,
+        Integer receivedQuantity,
+        Integer pendingQuantity,
         Double unitCost,
         Double estimatedSubtotal,
         String notes
@@ -20,6 +22,8 @@ public record PurchaseOrderItemDetailDTO(
                 getProductName(item.getProduct()),
                 getProductSku(item.getProduct()),
                 item.getQuantity(),
+                item.getReceivedQuantity(),
+                item.getPendingQuantity(),
                 item.getUnitCost(),
                 item.getEstimatedSubtotal(),
                 item.getNotes()
