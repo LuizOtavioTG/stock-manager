@@ -76,6 +76,9 @@
           @if (canEdit(order)) {
             <button pButton type="button" text rounded icon="pi pi-pencil" aria-label="Editar" title="Editar" (click)="openEditDialog(order)"></button>
           }
+          @if (canReceive(order)) {
+            <button pButton type="button" text rounded icon="pi pi-inbox" aria-label="Receber" title="Receber" (click)="openReceiveDialog(order)"></button>
+          }
           @if (canCancel(order)) {
             <button pButton type="button" text rounded severity="danger" icon="pi pi-ban" aria-label="Cancelar" title="Cancelar" (click)="confirmCancelOrder(order)"></button>
           }
@@ -236,6 +239,107 @@
 </p-dialog>
 
 <p-dialog
+  [header]="'Receber pedido #' + (purchaseOrderBeingReceived()?.id || '')"
+  modal
+  [visible]="isReceiveDialogVisible()"
+  [style]="{ width: 'min(68rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isReceiveDialogVisible.set($event)"
+>
+  @if (isReceiveLoading()) {
+    <div class="details-loading">
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      <span>Carregando pedido...</span>
+    </div>
+  } @else if (purchaseOrderBeingReceived(); as order) {
+    <form class="receive-form" [formGroup]="receiveForm" (ngSubmit)="confirmReceivePurchaseOrder()">
+      <section class="receive-fields">
+        <label class="form-field">
+          <span>Local de estoque</span>
+          <p-select
+            formControlName="storageLocationId"
+            [options]="storageLocationOptions()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Selecione"
+            appendTo="body"
+            [loading]="isLoadingStorageLocationOptions()"
+          />
+          @if (shouldShowReceiveOrderError('storageLocationId')) {
+            <small>Selecione um local de estoque.</small>
+          }
+        </label>
+
+        <label class="form-field form-field__full">
+          <span>Observações</span>
+          <textarea pTextarea rows="3" maxlength="500" formControlName="notes"></textarea>
+          @if (shouldShowReceiveOrderError('notes')) {
+            <small>As observações devem ter no máximo 500 caracteres.</small>
+          }
+        </label>
+      </section>
+
+      <section class="details-items receive-items" formArrayName="items">
+        <h3>Itens pendentes</h3>
+
+        @if (!pendingReceiveItems().length) {
+          <div class="empty-state">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            <strong>Nenhum item pendente</strong>
+            <span>Este pedido não possui quantidades pendentes para receber.</span>
+          </div>
+        } @else {
+          <p-table [value]="pendingReceiveItems()" [tableStyle]="{ 'min-width': '62rem' }" responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Produto</th>
+                <th class="numeric-column">Quantidade pedida</th>
+                <th class="numeric-column">Já recebida</th>
+                <th class="numeric-column">Pendente</th>
+                <th class="numeric-column">Quantidade a receber</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-item let-index="rowIndex">
+              <tr [formGroupName]="index">
+                <td>
+                  <div class="item-cell">
+                    <strong>{{ item.productName || 'Produto não informado' }}</strong>
+                    <span>{{ item.productSku || '#' + item.productId }}</span>
+                  </div>
+                </td>
+                <td class="numeric-column">{{ item.quantity }}</td>
+                <td class="numeric-column">{{ item.receivedQuantity }}</td>
+                <td class="numeric-column">{{ item.pendingQuantity }}</td>
+                <td class="numeric-column">
+                  <div class="receive-quantity-field">
+                    <p-inputNumber formControlName="receivedQuantity" [min]="0" [max]="item.pendingQuantity" [showButtons]="true" />
+                    @if (shouldShowReceiveItemError(receiveItemForms.at(index))) {
+                      <small>Informe uma quantidade entre 0 e {{ item.pendingQuantity }}.</small>
+                    }
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </section>
+
+      <footer class="form-footer">
+        <div class="order-total">
+          <span>Pedido</span>
+          <strong>{{ order.supplierName }}</strong>
+        </div>
+
+        <div class="form-actions">
+          <button pButton type="button" label="Cancelar" severity="secondary" text (click)="isReceiveDialogVisible.set(false)"></button>
+          <button pButton type="submit" label="Confirmar recebimento" icon="pi pi-check" [loading]="isReceiving()" [disabled]="isReceiving() || !pendingReceiveItems().length"></button>
+        </div>
+      </footer>
+    </form>
+  }
+</p-dialog>
+
+<p-dialog
   header="Detalhes do pedido de compra"
   modal
   [visible]="isDetailsDialogVisible()"
@@ -291,6 +395,8 @@
             <th>Produto</th>
             <th>SKU</th>
             <th class="numeric-column">Quantidade</th>
+            <th class="numeric-column">Recebida</th>
+            <th class="numeric-column">Pendente</th>
             <th class="numeric-column">Custo unitário</th>
             <th class="numeric-column">Subtotal</th>
             <th>Observações</th>
@@ -301,6 +407,8 @@
             <td>{{ item.productName || '-' }}</td>
             <td>{{ item.productSku || '-' }}</td>
             <td class="numeric-column">{{ item.quantity }}</td>
+            <td class="numeric-column">{{ item.receivedQuantity }}</td>
+            <td class="numeric-column">{{ item.pendingQuantity }}</td>
             <td class="numeric-column">{{ item.unitCost | currency: 'BRL':'symbol':'1.2-2' }}</td>
             <td class="numeric-column">{{ item.estimatedSubtotal | currency: 'BRL':'symbol':'1.2-2' }}</td>
             <td>{{ item.notes || '-' }}</td>

@@ -21,3 +21,14 @@ export interface PurchaseOrderItemRequest {
   unitCost: number;
   notes?: string | null;
 }
+
+export interface PurchaseOrderReceiveRequest {
+  storageLocationId: number;
+  items: PurchaseOrderReceiveItemRequest[];
+  notes?: string | null;
+}
+
+export interface PurchaseOrderReceiveItemRequest {
+  purchaseOrderItemId: number;
+  receivedQuantity: number;
+}

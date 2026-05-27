@@ -35,10 +35,18 @@ import {
 } from '../../../../shared/components/paginated-list/paginated-list';
 import { Product } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
+import { StorageLocation } from '../../../storage-locations/models/storage-location.model';
+import { StorageLocationService } from '../../../storage-locations/services/storage-location.service';
 import { Supplier } from '../../../suppliers/models/supplier.model';
 import { SupplierService } from '../../../suppliers/services/supplier.service';
-import { PurchaseOrder, PurchaseOrderStatus } from '../../models/purchase-order.model';
-import { PurchaseOrderCreateRequest, PurchaseOrderItemRequest, PurchaseOrderUpdateRequest } from '../../models/purchase-order-request.model';
+import { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '../../models/purchase-order.model';
+import {
+  PurchaseOrderCreateRequest,
+  PurchaseOrderItemRequest,
+  PurchaseOrderReceiveItemRequest,
+  PurchaseOrderReceiveRequest,
+  PurchaseOrderUpdateRequest
+} from '../../models/purchase-order-request.model';
 import { PurchaseOrderService } from '../../services/purchase-order.service';
 
 type TagSeverity = 'success' | 'secondary' | 'info' | 'warn' | 'danger';
@@ -55,6 +63,11 @@ type PurchaseOrderItemForm = FormGroup<{
   notes: FormControl<string | null>;
 }>;
 
+type ReceiveItemForm = FormGroup<{
+  purchaseOrderItemId: FormControl<number>;
+  receivedQuantity: FormControl<number | null>;
+}>;
+
 function minFormArrayLengthValidator(minLength: number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value as unknown[];
@@ -62,6 +75,26 @@ function minFormArrayLengthValidator(minLength: number): ValidatorFn {
     return Array.isArray(value) && value.length >= minLength
       ? null
       : { minItems: { requiredLength: minLength } };
+  };
+}
+
+function receiveQuantityValidator(maxQuantity: number): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as number | null;
+
+    if (value === null || value === undefined || value === 0) {
+      return null;
+    }
+
+    if (value < 0) {
+      return { min: true };
+    }
+
+    if (value > maxQuantity) {
+      return { maxPending: { max: maxQuantity } };
+    }
+
+    return null;
   };
 }
 
@@ -107,6 +140,7 @@ export class PurchaseOrderListComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly productService = inject(ProductService);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
+  private readonly storageLocationService = inject(StorageLocationService);
   private readonly supplierService = inject(SupplierService);
 
   protected readonly columns: PaginatedListColumn[] = [
@@ -133,20 +167,29 @@ export class PurchaseOrderListComponent implements OnInit {
   protected readonly isDetailsLoading = signal(false);
   protected readonly isFormDialogVisible = signal(false);
   protected readonly isDetailsDialogVisible = signal(false);
+  protected readonly isReceiveDialogVisible = signal(false);
+  protected readonly isReceiveLoading = signal(false);
+  protected readonly isReceiving = signal(false);
   protected readonly pageSize = signal(10);
   protected readonly sort = signal('orderDate,desc');
   protected readonly purchaseOrdersPage = signal<Page<PurchaseOrder>>(EMPTY_PAGE);
   protected readonly selectedPurchaseOrder = signal<PurchaseOrder | null>(null);
+  protected readonly purchaseOrderBeingReceived = signal<PurchaseOrder | null>(null);
   protected readonly purchaseOrderBeingEdited = signal<PurchaseOrder | null>(null);
   protected readonly supplierOptions = signal<Supplier[]>([]);
   protected readonly productOptions = signal<Product[]>([]);
+  protected readonly storageLocationOptions = signal<StorageLocation[]>([]);
   protected readonly isLoadingSupplierOptions = signal(false);
   protected readonly isLoadingProductOptions = signal(false);
+  protected readonly isLoadingStorageLocationOptions = signal(false);
 
   protected readonly purchaseOrders = computed(() => this.purchaseOrdersPage().content);
   protected readonly totalElements = computed(() => this.purchaseOrdersPage().totalElements);
   protected readonly first = computed(() => this.purchaseOrdersPage().number * this.purchaseOrdersPage().size);
   protected readonly formTitle = computed(() => (this.purchaseOrderBeingEdited() ? 'Editar pedido de compra' : 'Novo pedido de compra'));
+  protected readonly pendingReceiveItems = computed(() =>
+    this.purchaseOrderBeingReceived()?.items.filter((item) => item.pendingQuantity > 0) ?? []
+  );
 
   protected readonly filterForm = this.formBuilder.group({
     supplierId: this.formBuilder.control<number | null>(null),
@@ -161,8 +204,18 @@ export class PurchaseOrderListComponent implements OnInit {
     items: this.formBuilder.array<PurchaseOrderItemForm>([], [minFormArrayLengthValidator(1)])
   });
 
+  protected readonly receiveForm = this.formBuilder.group({
+    storageLocationId: this.formBuilder.control<number | null>(null, [Validators.required]),
+    notes: this.formBuilder.control<string | null>(null, [Validators.maxLength(500)]),
+    items: this.formBuilder.array<ReceiveItemForm>([])
+  });
+
   protected get itemForms(): FormArray<PurchaseOrderItemForm> {
     return this.purchaseOrderForm.controls.items;
+  }
+
+  protected get receiveItemForms(): FormArray<ReceiveItemForm> {
+    return this.receiveForm.controls.items;
   }
 
   ngOnInit(): void {
@@ -337,6 +390,61 @@ export class PurchaseOrderListComponent implements OnInit {
     });
   }
 
+  protected openReceiveDialog(order: PurchaseOrder): void {
+    this.isReceiveDialogVisible.set(true);
+    this.isReceiveLoading.set(true);
+    this.purchaseOrderBeingReceived.set(null);
+    this.receiveForm.reset({
+      storageLocationId: null,
+      notes: null
+    });
+    this.receiveItemForms.clear();
+    this.loadStorageLocationOptions();
+
+    this.purchaseOrderService
+      .getPurchaseOrderById(order.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (orderDetail) => {
+          this.purchaseOrderBeingReceived.set(orderDetail);
+          orderDetail.items
+            .filter((item) => item.pendingQuantity > 0)
+            .forEach((item) => this.receiveItemForms.push(this.createReceiveItemForm(item)));
+          this.receiveForm.markAsPristine();
+          this.receiveForm.markAsUntouched();
+          this.isReceiveLoading.set(false);
+        },
+        error: () => {
+          this.isReceiveDialogVisible.set(false);
+          this.isReceiveLoading.set(false);
+          this.showDetailsLoadError();
+        }
+      });
+  }
+
+  protected confirmReceivePurchaseOrder(): void {
+    if (this.receiveForm.invalid) {
+      this.receiveForm.markAllAsTouched();
+      this.receiveItemForms.controls.forEach((itemForm) => itemForm.markAllAsTouched());
+      return;
+    }
+
+    const payload = this.receivePayload();
+    if (!payload.items.length) {
+      this.showEmptyReceiveWarning();
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: 'Confirmar recebimento',
+      message: 'Deseja confirmar o recebimento deste pedido?',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Confirmar',
+      rejectLabel: 'Voltar',
+      accept: () => this.receivePurchaseOrder(payload)
+    });
+  }
+
   protected addItem(): void {
     this.itemForms.push(this.createItemForm());
     this.itemForms.markAsDirty();
@@ -374,6 +482,10 @@ export class PurchaseOrderListComponent implements OnInit {
 
   protected canCancel(order: PurchaseOrder): boolean {
     return order.status !== 'CANCELLED' && order.status !== 'RECEIVED';
+  }
+
+  protected canReceive(order: PurchaseOrder): boolean {
+    return order.status === 'DRAFT' || order.status === 'SENT' || order.status === 'PARTIALLY_RECEIVED';
   }
 
   protected statusLabel(status: PurchaseOrderStatus): string {
@@ -415,12 +527,31 @@ export class PurchaseOrderListComponent implements OnInit {
     return control.invalid && (control.dirty || control.touched);
   }
 
+  protected shouldShowReceiveOrderError(controlName: 'storageLocationId' | 'notes'): boolean {
+    const control = this.receiveForm.controls[controlName];
+
+    return control.invalid && (control.dirty || control.touched);
+  }
+
+  protected shouldShowReceiveItemError(itemForm: ReceiveItemForm): boolean {
+    const control = itemForm.controls.receivedQuantity;
+
+    return control.invalid && (control.dirty || control.touched);
+  }
+
   private createItemForm(value?: Partial<PurchaseOrderItemRequest>): PurchaseOrderItemForm {
     return this.formBuilder.group({
       productId: this.formBuilder.control<number | null>(value?.productId ?? null, [Validators.required]),
       quantity: this.formBuilder.control<number | null>(value?.quantity ?? null, [Validators.required, Validators.min(1)]),
       unitCost: this.formBuilder.control<number | null>(value?.unitCost ?? null, [Validators.required, Validators.min(0)]),
       notes: this.formBuilder.control<string | null>(value?.notes ?? null, [Validators.maxLength(500)])
+    });
+  }
+
+  private createReceiveItemForm(item: PurchaseOrderItem): ReceiveItemForm {
+    return this.formBuilder.nonNullable.group({
+      purchaseOrderItemId: this.formBuilder.nonNullable.control(item.id),
+      receivedQuantity: this.formBuilder.control<number | null>(item.pendingQuantity, [receiveQuantityValidator(item.pendingQuantity)])
     });
   }
 
@@ -475,6 +606,25 @@ export class PurchaseOrderListComponent implements OnInit {
       });
   }
 
+  private loadStorageLocationOptions(): void {
+    this.isLoadingStorageLocationOptions.set(true);
+
+    this.storageLocationService
+      .listStorageLocations(0, 100, 'name,asc')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (locationsPage) => {
+          this.storageLocationOptions.set(locationsPage.content);
+          this.isLoadingStorageLocationOptions.set(false);
+        },
+        error: () => {
+          this.storageLocationOptions.set([]);
+          this.isLoadingStorageLocationOptions.set(false);
+          this.showOptionsLoadError();
+        }
+      });
+  }
+
   private purchaseOrderCreatePayload(): PurchaseOrderCreateRequest {
     const value = this.purchaseOrderForm.getRawValue();
 
@@ -511,6 +661,26 @@ export class PurchaseOrderListComponent implements OnInit {
     });
   }
 
+  private receivePayload(): PurchaseOrderReceiveRequest {
+    const value = this.receiveForm.getRawValue();
+
+    return {
+      storageLocationId: value.storageLocationId as number,
+      notes: this.optionalText(value.notes),
+      items: this.receiveItemsPayload()
+    };
+  }
+
+  private receiveItemsPayload(): PurchaseOrderReceiveItemRequest[] {
+    return this.receiveItemForms.controls
+      .map((itemForm) => itemForm.getRawValue())
+      .filter((item) => item.receivedQuantity !== null && item.receivedQuantity > 0)
+      .map((item) => ({
+        purchaseOrderItemId: item.purchaseOrderItemId,
+        receivedQuantity: item.receivedQuantity as number
+      }));
+  }
+
   private optionalText(value: string | null | undefined): string | null {
     return value?.trim() || null;
   }
@@ -525,6 +695,32 @@ export class PurchaseOrderListComponent implements OnInit {
           this.loadPurchaseOrders(this.purchaseOrdersPage().number, this.pageSize(), this.sort());
         },
         error: () => this.showCancelError()
+      });
+  }
+
+  private receivePurchaseOrder(payload: PurchaseOrderReceiveRequest): void {
+    const order = this.purchaseOrderBeingReceived();
+
+    if (!order || this.isReceiving()) {
+      return;
+    }
+
+    this.isReceiving.set(true);
+
+    this.purchaseOrderService
+      .receivePurchaseOrder(order.id, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isReceiving.set(false);
+          this.isReceiveDialogVisible.set(false);
+          this.showSuccess('Pedido recebido com sucesso.');
+          this.loadPurchaseOrders(this.purchaseOrdersPage().number, this.pageSize(), this.sort());
+        },
+        error: () => {
+          this.isReceiving.set(false);
+          this.showReceiveError();
+        }
       });
   }
 
@@ -561,6 +757,24 @@ export class PurchaseOrderListComponent implements OnInit {
       summary: 'Erro ao cancelar pedido',
       detail: 'Não foi possível cancelar o pedido de compra.',
       life: 5000
+    });
+  }
+
+  private showReceiveError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao receber pedido',
+      detail: 'Não foi possível registrar o recebimento do pedido.',
+      life: 5000
+    });
+  }
+
+  private showEmptyReceiveWarning(): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Nenhum item selecionado',
+      detail: 'Informe uma quantidade a receber em pelo menos um item pendente.',
+      life: 4000
     });
   }
 

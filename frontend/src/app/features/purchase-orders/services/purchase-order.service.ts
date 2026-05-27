@@ -4,7 +4,11 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../core/api/api.service';
 import { Page } from '../../../models/page.model';
 import { PurchaseOrder, PurchaseOrderStatus } from '../models/purchase-order.model';
-import { PurchaseOrderCreateRequest, PurchaseOrderUpdateRequest } from '../models/purchase-order-request.model';
+import {
+  PurchaseOrderCreateRequest,
+  PurchaseOrderReceiveRequest,
+  PurchaseOrderUpdateRequest
+} from '../models/purchase-order-request.model';
 
 @Injectable({
   providedIn: 'root'
@@ -44,5 +48,9 @@ export class PurchaseOrderService {
 
   cancelPurchaseOrder(id: number): Observable<PurchaseOrder> {
     return this.api.patch<PurchaseOrder, Record<string, never>>(`api/purchase-orders/${id}/cancel`, {});
+  }
+
+  receivePurchaseOrder(id: number, payload: PurchaseOrderReceiveRequest): Observable<PurchaseOrder> {
+    return this.api.post<PurchaseOrder, PurchaseOrderReceiveRequest>(`api/purchase-orders/${id}/receive`, payload);
   }
 }

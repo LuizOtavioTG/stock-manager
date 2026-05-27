@@ -20,6 +20,8 @@ export interface PurchaseOrderItem {
   productName: string;
   productSku: string | null;
   quantity: number;
+  receivedQuantity: number;
+  pendingQuantity: number;
   unitCost: number;
   estimatedSubtotal: number;
   notes: string | null;
