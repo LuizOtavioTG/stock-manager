@@ -3,6 +3,7 @@ package com.luizotg.stock_manager.controller;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderDetailDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiptDetailDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiptReverseDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
 import com.luizotg.stock_manager.model.PurchaseOrder;
@@ -112,5 +113,16 @@ public class PurchaseOrderController {
         Page<PurchaseOrderReceiptDetailDTO> dtoPage = purchaseOrderService.findReceiptsByPurchaseOrderId(id, pageable)
                 .map(PurchaseOrderReceiptDetailDTO::new);
         return ResponseEntity.ok(dtoPage);
+    }
+
+    @PostMapping("/{purchaseOrderId}/receipts/{receiptId}/reverse")
+    public ResponseEntity<PurchaseOrderReceiptDetailDTO> reverseReceipt(
+            @PathVariable Long purchaseOrderId,
+            @PathVariable Long receiptId,
+            @RequestBody @Valid PurchaseOrderReceiptReverseDTO dto
+    ) {
+        return ResponseEntity.ok(new PurchaseOrderReceiptDetailDTO(
+                purchaseOrderService.reverseReceipt(purchaseOrderId, receiptId, dto)
+        ));
     }
 }

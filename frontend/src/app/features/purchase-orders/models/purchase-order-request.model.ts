@@ -32,3 +32,7 @@ export interface PurchaseOrderReceiveItemRequest {
   purchaseOrderItemId: number;
   receivedQuantity: number;
 }
+
+export interface PurchaseOrderReceiptReverseRequest {
+  reason: string;
+}

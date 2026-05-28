@@ -7,6 +7,7 @@ import { PurchaseOrder, PurchaseOrderStatus } from '../models/purchase-order.mod
 import { PurchaseOrderReceipt } from '../models/purchase-order-receipt.model';
 import {
   PurchaseOrderCreateRequest,
+  PurchaseOrderReceiptReverseRequest,
   PurchaseOrderReceiveRequest,
   PurchaseOrderUpdateRequest
 } from '../models/purchase-order-request.model';
@@ -59,5 +60,16 @@ export class PurchaseOrderService {
     return this.api.get<Page<PurchaseOrderReceipt>>(`api/purchase-orders/${purchaseOrderId}/receipts`, {
       params: { page, size, sort }
     });
+  }
+
+  reverseReceipt(
+    purchaseOrderId: number,
+    receiptId: number,
+    payload: PurchaseOrderReceiptReverseRequest
+  ): Observable<PurchaseOrderReceipt> {
+    return this.api.post<PurchaseOrderReceipt, PurchaseOrderReceiptReverseRequest>(
+      `api/purchase-orders/${purchaseOrderId}/receipts/${receiptId}/reverse`,
+      payload
+    );
   }
 }

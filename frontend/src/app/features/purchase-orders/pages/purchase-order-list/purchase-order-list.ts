@@ -44,6 +44,7 @@ import { PurchaseOrderReceipt } from '../../models/purchase-order-receipt.model'
 import {
   PurchaseOrderCreateRequest,
   PurchaseOrderItemRequest,
+  PurchaseOrderReceiptReverseRequest,
   PurchaseOrderReceiveItemRequest,
   PurchaseOrderReceiveRequest,
   PurchaseOrderUpdateRequest
@@ -180,15 +181,18 @@ export class PurchaseOrderListComponent implements OnInit {
   protected readonly isFormDialogVisible = signal(false);
   protected readonly isDetailsDialogVisible = signal(false);
   protected readonly isReceiptItemsDialogVisible = signal(false);
+  protected readonly isReverseDialogVisible = signal(false);
   protected readonly isReceiveDialogVisible = signal(false);
   protected readonly isReceiveLoading = signal(false);
   protected readonly isReceiptsLoading = signal(false);
+  protected readonly isReversingReceipt = signal(false);
   protected readonly isReceiving = signal(false);
   protected readonly pageSize = signal(10);
   protected readonly sort = signal('orderDate,desc');
   protected readonly purchaseOrdersPage = signal<Page<PurchaseOrder>>(EMPTY_PAGE);
   protected readonly selectedPurchaseOrder = signal<PurchaseOrder | null>(null);
   protected readonly selectedReceipt = signal<PurchaseOrderReceipt | null>(null);
+  protected readonly receiptBeingReversed = signal<PurchaseOrderReceipt | null>(null);
   protected readonly receiptsPage = signal<Page<PurchaseOrderReceipt>>(EMPTY_RECEIPTS_PAGE);
   protected readonly purchaseOrderBeingReceived = signal<PurchaseOrder | null>(null);
   protected readonly purchaseOrderBeingEdited = signal<PurchaseOrder | null>(null);
@@ -225,6 +229,10 @@ export class PurchaseOrderListComponent implements OnInit {
     storageLocationId: this.formBuilder.control<number | null>(null, [Validators.required]),
     notes: this.formBuilder.control<string | null>(null, [Validators.maxLength(500)]),
     items: this.formBuilder.array<ReceiveItemForm>([])
+  });
+
+  protected readonly reverseReceiptForm = this.formBuilder.group({
+    reason: this.formBuilder.control<string | null>(null, [Validators.required, Validators.maxLength(500), Validators.pattern(/\S/)])
   });
 
   protected get itemForms(): FormArray<PurchaseOrderItemForm> {
@@ -401,6 +409,14 @@ export class PurchaseOrderListComponent implements OnInit {
     this.isReceiptItemsDialogVisible.set(true);
   }
 
+  protected openReverseReceiptDialog(receipt: PurchaseOrderReceipt): void {
+    this.receiptBeingReversed.set(receipt);
+    this.reverseReceiptForm.reset({ reason: null });
+    this.reverseReceiptForm.markAsPristine();
+    this.reverseReceiptForm.markAsUntouched();
+    this.isReverseDialogVisible.set(true);
+  }
+
   protected confirmCancelOrder(order: PurchaseOrder): void {
     this.confirmationService.confirm({
       header: 'Cancelar pedido',
@@ -527,6 +543,24 @@ export class PurchaseOrderListComponent implements OnInit {
     return severityByStatus[status];
   }
 
+  protected receiptStatusLabel(status: PurchaseOrderReceipt['status']): string {
+    const labelByStatus: Record<PurchaseOrderReceipt['status'], string> = {
+      ACTIVE: 'Ativo',
+      REVERSED: 'Estornado'
+    };
+
+    return labelByStatus[status];
+  }
+
+  protected receiptStatusSeverity(status: PurchaseOrderReceipt['status']): TagSeverity {
+    const severityByStatus: Record<PurchaseOrderReceipt['status'], TagSeverity> = {
+      ACTIVE: 'success',
+      REVERSED: 'danger'
+    };
+
+    return severityByStatus[status];
+  }
+
   protected itemSubtotal(itemForm: PurchaseOrderItemForm): number {
     const quantity = itemForm.controls.quantity.value ?? 0;
     const unitCost = itemForm.controls.unitCost.value ?? 0;
@@ -560,6 +594,29 @@ export class PurchaseOrderListComponent implements OnInit {
     const control = itemForm.controls.receivedQuantity;
 
     return control.invalid && (control.dirty || control.touched);
+  }
+
+  protected shouldShowReverseReasonError(): boolean {
+    const control = this.reverseReceiptForm.controls.reason;
+
+    return control.invalid && (control.dirty || control.touched);
+  }
+
+  protected confirmReverseReceipt(): void {
+    if (this.reverseReceiptForm.invalid) {
+      this.reverseReceiptForm.markAllAsTouched();
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: 'Estornar recebimento',
+      message: 'Deseja estornar este recebimento?',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Estornar',
+      rejectLabel: 'Voltar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.reverseReceipt()
+    });
   }
 
   private createItemForm(value?: Partial<PurchaseOrderItemRequest>): PurchaseOrderItemForm {
@@ -645,6 +702,25 @@ export class PurchaseOrderListComponent implements OnInit {
           this.receiptsPage.set(EMPTY_RECEIPTS_PAGE);
           this.isReceiptsLoading.set(false);
           this.showReceiptsLoadError();
+        }
+      });
+  }
+
+  private refreshSelectedPurchaseOrderDetails(orderId: number): void {
+    this.isDetailsLoading.set(true);
+
+    this.purchaseOrderService
+      .getPurchaseOrderById(orderId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (orderDetail) => {
+          this.selectedPurchaseOrder.set(orderDetail);
+          this.isDetailsLoading.set(false);
+          this.loadReceipts(orderDetail.id);
+        },
+        error: () => {
+          this.isDetailsLoading.set(false);
+          this.showDetailsLoadError();
         }
       });
   }
@@ -767,6 +843,38 @@ export class PurchaseOrderListComponent implements OnInit {
       });
   }
 
+  private reverseReceipt(): void {
+    const receipt = this.receiptBeingReversed();
+
+    if (!receipt || this.isReversingReceipt()) {
+      return;
+    }
+
+    const payload: PurchaseOrderReceiptReverseRequest = {
+      reason: this.optionalText(this.reverseReceiptForm.controls.reason.value) as string
+    };
+
+    this.isReversingReceipt.set(true);
+
+    this.purchaseOrderService
+      .reverseReceipt(receipt.purchaseOrderId, receipt.id, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.isReversingReceipt.set(false);
+          this.isReverseDialogVisible.set(false);
+          this.receiptBeingReversed.set(null);
+          this.showSuccess('Recebimento estornado com sucesso.');
+          this.refreshSelectedPurchaseOrderDetails(receipt.purchaseOrderId);
+          this.loadPurchaseOrders(this.purchaseOrdersPage().number, this.pageSize(), this.sort());
+        },
+        error: () => {
+          this.isReversingReceipt.set(false);
+          this.showReverseReceiptError();
+        }
+      });
+  }
+
   private showSuccess(detail: string): void {
     this.messageService.add({
       severity: 'success',
@@ -808,6 +916,15 @@ export class PurchaseOrderListComponent implements OnInit {
       severity: 'error',
       summary: 'Erro ao receber pedido',
       detail: 'Não foi possível registrar o recebimento do pedido.',
+      life: 5000
+    });
+  }
+
+  private showReverseReceiptError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao estornar recebimento',
+      detail: 'Não foi possível estornar o recebimento.',
       life: 5000
     });
   }

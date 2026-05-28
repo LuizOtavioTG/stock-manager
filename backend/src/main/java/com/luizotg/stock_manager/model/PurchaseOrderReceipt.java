@@ -4,6 +4,8 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -56,6 +58,15 @@ public class PurchaseOrderReceipt {
     @Column(length = 500)
     private String notes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PurchaseOrderReceiptStatus status = PurchaseOrderReceiptStatus.ACTIVE;
+
+    private LocalDateTime reversedAt;
+
+    @Column(length = 500)
+    private String reversalReason;
+
     @OneToMany(mappedBy = "receipt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PurchaseOrderReceiptItem> items = new ArrayList<>();
 
@@ -83,6 +94,7 @@ public class PurchaseOrderReceipt {
         this.storageLocation = storageLocation;
         this.notes = notes;
         this.receiptDate = LocalDateTime.now();
+        this.status = PurchaseOrderReceiptStatus.ACTIVE;
         replaceItems(items);
     }
 
@@ -91,6 +103,19 @@ public class PurchaseOrderReceipt {
         if (receiptDate == null) {
             receiptDate = LocalDateTime.now();
         }
+        if (status == null) {
+            status = PurchaseOrderReceiptStatus.ACTIVE;
+        }
+    }
+
+    public boolean isActive() {
+        return PurchaseOrderReceiptStatus.ACTIVE.equals(status);
+    }
+
+    public void reverse(String reason) {
+        this.status = PurchaseOrderReceiptStatus.REVERSED;
+        this.reversedAt = LocalDateTime.now();
+        this.reversalReason = reason;
     }
 
     private void replaceItems(List<PurchaseOrderReceiptItem> newItems) {

@@ -1,6 +1,7 @@
 package com.luizotg.stock_manager.dto.purchaseOrder;
 
 import com.luizotg.stock_manager.model.PurchaseOrderReceipt;
+import com.luizotg.stock_manager.model.PurchaseOrderReceiptStatus;
 import com.luizotg.stock_manager.model.StorageLocation;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,9 @@ public record PurchaseOrderReceiptDetailDTO(
         String storageLocationName,
         LocalDateTime receiptDate,
         String notes,
+        PurchaseOrderReceiptStatus status,
+        LocalDateTime reversedAt,
+        String reversalReason,
         List<PurchaseOrderReceiptItemDetailDTO> items,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -25,6 +29,9 @@ public record PurchaseOrderReceiptDetailDTO(
                 getStorageLocationName(receipt.getStorageLocation()),
                 receipt.getReceiptDate(),
                 receipt.getNotes(),
+                receipt.getStatus(),
+                receipt.getReversedAt(),
+                receipt.getReversalReason(),
                 receipt.getItems().stream().map(PurchaseOrderReceiptItemDetailDTO::new).toList(),
                 receipt.getCreatedAt(),
                 receipt.getUpdatedAt()

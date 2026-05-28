@@ -135,6 +135,16 @@ public class PurchaseOrder {
     }
 
     public void updateStatusAfterReceiving() {
+        updateStatusAfterReceiptChange();
+    }
+
+    public void updateStatusAfterReceiptChange() {
+        boolean hasReceivedItems = items.stream().anyMatch(item -> item.getReceivedQuantity() > 0);
+        if (!hasReceivedItems) {
+            this.status = PurchaseOrderStatus.SENT;
+            return;
+        }
+
         boolean hasPendingItems = items.stream().anyMatch(item -> item.getPendingQuantity() > 0);
         this.status = hasPendingItems ? PurchaseOrderStatus.PARTIALLY_RECEIVED : PurchaseOrderStatus.RECEIVED;
     }

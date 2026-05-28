@@ -437,6 +437,7 @@
             <tr>
               <th>Data</th>
               <th>Local de estoque</th>
+              <th>Status</th>
               <th class="numeric-column">Itens recebidos</th>
               <th>Observações</th>
               <th>Ações</th>
@@ -446,10 +447,34 @@
             <tr>
               <td>{{ receipt.receiptDate ? (receipt.receiptDate | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
               <td>{{ receipt.storageLocationName || '-' }}</td>
-              <td class="numeric-column">{{ receipt.items.length }}</td>
-              <td>{{ receipt.notes || '-' }}</td>
               <td>
-                <button pButton type="button" text rounded icon="pi pi-list" label="Ver itens" (click)="openReceiptItems(receipt)"></button>
+                <p-tag [severity]="receiptStatusSeverity(receipt.status)" [value]="receiptStatusLabel(receipt.status)" />
+              </td>
+              <td class="numeric-column">{{ receipt.items.length }}</td>
+              <td>
+                <div class="item-cell">
+                  <span>{{ receipt.notes || '-' }}</span>
+                  @if (receipt.status === 'REVERSED') {
+                    <span>Estorno: {{ receipt.reversalReason || '-' }}</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button pButton type="button" text rounded icon="pi pi-list" label="Ver itens" (click)="openReceiptItems(receipt)"></button>
+                  @if (receipt.status === 'ACTIVE') {
+                    <button
+                      pButton
+                      type="button"
+                      text
+                      rounded
+                      severity="danger"
+                      icon="pi pi-undo"
+                      label="Estornar"
+                      (click)="openReverseReceiptDialog(receipt)"
+                    ></button>
+                  }
+                </div>
               </td>
             </tr>
           </ng-template>
@@ -457,6 +482,44 @@
       }
     </section>
   }
+</p-dialog>
+
+<p-dialog
+  header="Estornar recebimento"
+  modal
+  [visible]="isReverseDialogVisible()"
+  [style]="{ width: 'min(34rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isReverseDialogVisible.set($event)"
+>
+  <form class="receive-form" [formGroup]="reverseReceiptForm" (ngSubmit)="confirmReverseReceipt()">
+    <label class="form-field">
+      <span>Motivo do estorno</span>
+      <textarea pTextarea rows="4" maxlength="500" formControlName="reason"></textarea>
+      @if (shouldShowReverseReasonError()) {
+        <small>Informe o motivo do estorno com no máximo 500 caracteres.</small>
+      }
+    </label>
+
+    <footer class="form-footer">
+      <div class="order-total">
+        <span>Recebimento</span>
+        <strong>#{{ receiptBeingReversed()?.id || '-' }}</strong>
+      </div>
+
+      <div class="form-actions">
+        <button pButton type="button" label="Cancelar" severity="secondary" text (click)="isReverseDialogVisible.set(false)"></button>
+        <button
+          pButton
+          type="submit"
+          label="Estornar"
+          icon="pi pi-undo"
+          severity="danger"
+          [loading]="isReversingReceipt()"
+          [disabled]="isReversingReceipt()"
+        ></button>
+      </div>
+    </footer>
+  </form>
 </p-dialog>
 
 <p-dialog

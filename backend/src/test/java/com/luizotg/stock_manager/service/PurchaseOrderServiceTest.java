@@ -2,11 +2,14 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderItemCreateDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiptReverseDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveItemDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
 import com.luizotg.stock_manager.exception.BusinessException;
+import com.luizotg.stock_manager.exception.InsufficientStockException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.PurchaseOrder;
@@ -37,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -364,6 +368,106 @@ class PurchaseOrderServiceTest {
         verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
     }
 
+    @Test
+    void reverseReceiptCreatesOutboundMovementAndUpdatesPurchaseOrderStatus() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.PARTIALLY_RECEIVED, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        item.receive(4);
+        PurchaseOrderReceipt receipt = purchaseOrderReceipt(order, item, 4);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(purchaseOrderReceiptRepository.findById(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(purchaseOrderReceiptRepository.save(any(PurchaseOrderReceipt.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PurchaseOrderReceipt reversed = purchaseOrderService.reverseReceipt(
+                PURCHASE_ORDER_ID,
+                receipt.getId(),
+                new PurchaseOrderReceiptReverseDTO("Local errado")
+        );
+
+        assertThat(item.getReceivedQuantity()).isZero();
+        assertThat(item.getPendingQuantity()).isEqualTo(10);
+        assertThat(order.getStatus()).isEqualTo(PurchaseOrderStatus.SENT);
+        assertThat(reversed.getStatus().name()).isEqualTo("REVERSED");
+        assertThat(reversed.getReversedAt()).isNotNull();
+        assertThat(reversed.getReversalReason()).isEqualTo("Local errado");
+        verify(stockMovementService).registerOutbound(argThat((StockOutboundRequestDTO dto) ->
+                dto.productId().equals(PRODUCT_ID)
+                        && dto.storageLocationId().equals(STORAGE_LOCATION_ID)
+                        && dto.quantity().equals(4)
+                        && dto.reason().equals("Estorno de recebimento de pedido de compra")
+                        && dto.reference().equals("PURCHASE-ORDER-RECEIPT-" + receipt.getId())
+                        && dto.responsible().equals("Sistema")
+                        && dto.notes().equals("Local errado")
+        ));
+        verify(purchaseOrderRepository).save(order);
+        verify(purchaseOrderReceiptRepository).save(receipt);
+    }
+
+    @Test
+    void reverseReceiptThrowsWhenReceiptDoesNotBelongToPurchaseOrder() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.PARTIALLY_RECEIVED, 10);
+        PurchaseOrder otherOrder = purchaseOrder(PurchaseOrderStatus.PARTIALLY_RECEIVED, 10);
+        ReflectionTestUtils.setField(otherOrder, "id", 999L);
+        PurchaseOrderReceipt receipt = purchaseOrderReceipt(otherOrder, otherOrder.getItems().get(0), 4);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(purchaseOrderReceiptRepository.findById(receipt.getId())).thenReturn(Optional.of(receipt));
+
+        assertThatThrownBy(() -> purchaseOrderService.reverseReceipt(
+                PURCHASE_ORDER_ID,
+                receipt.getId(),
+                new PurchaseOrderReceiptReverseDTO("Pedido errado")
+        )).isInstanceOf(BusinessException.class)
+                .hasMessage("Recebimento informado não pertence ao pedido.");
+
+        verify(stockMovementService, never()).registerOutbound(any(StockOutboundRequestDTO.class));
+        verify(purchaseOrderReceiptRepository, never()).save(any(PurchaseOrderReceipt.class));
+    }
+
+    @Test
+    void reverseReceiptThrowsWhenAlreadyReversed() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.PARTIALLY_RECEIVED, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        item.receive(4);
+        PurchaseOrderReceipt receipt = purchaseOrderReceipt(order, item, 4);
+        receipt.reverse("Estorno anterior");
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(purchaseOrderReceiptRepository.findById(receipt.getId())).thenReturn(Optional.of(receipt));
+
+        assertThatThrownBy(() -> purchaseOrderService.reverseReceipt(
+                PURCHASE_ORDER_ID,
+                receipt.getId(),
+                new PurchaseOrderReceiptReverseDTO("Duplicado")
+        )).isInstanceOf(BusinessException.class)
+                .hasMessage("Recebimento já estornado não pode ser estornado novamente.");
+
+        verify(stockMovementService, never()).registerOutbound(any(StockOutboundRequestDTO.class));
+        verify(purchaseOrderReceiptRepository, never()).save(any(PurchaseOrderReceipt.class));
+    }
+
+    @Test
+    void reverseReceiptThrowsFriendlyMessageWhenStockIsInsufficient() {
+        PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.PARTIALLY_RECEIVED, 10);
+        PurchaseOrderItem item = order.getItems().get(0);
+        item.receive(4);
+        PurchaseOrderReceipt receipt = purchaseOrderReceipt(order, item, 4);
+        when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(purchaseOrderReceiptRepository.findById(receipt.getId())).thenReturn(Optional.of(receipt));
+        doThrow(new InsufficientStockException("Estoque insuficiente para realizar saída."))
+                .when(stockMovementService)
+                .registerOutbound(any(StockOutboundRequestDTO.class));
+
+        assertThatThrownBy(() -> purchaseOrderService.reverseReceipt(
+                PURCHASE_ORDER_ID,
+                receipt.getId(),
+                new PurchaseOrderReceiptReverseDTO("Sem saldo")
+        )).isInstanceOf(InsufficientStockException.class)
+                .hasMessage("Não há estoque suficiente para estornar este recebimento.");
+
+        assertThat(item.getReceivedQuantity()).isEqualTo(4);
+        verify(purchaseOrderReceiptRepository, never()).save(any(PurchaseOrderReceipt.class));
+        verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
+    }
+
     private void mockSupplierAndProduct() {
         when(supplierRepository.findById(SUPPLIER_ID)).thenReturn(Optional.of(supplier()));
         when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product(PRODUCT_ID, "SKU-001")));
@@ -432,6 +536,22 @@ class PurchaseOrderServiceTest {
                 null,
                 null
         );
+    }
+
+    private PurchaseOrderReceipt purchaseOrderReceipt(PurchaseOrder order, PurchaseOrderItem item, int receivedQuantity) {
+        PurchaseOrderReceipt receipt = new PurchaseOrderReceipt(
+                order,
+                storageLocation(),
+                "NF",
+                List.of(new com.luizotg.stock_manager.model.PurchaseOrderReceiptItem(
+                        item,
+                        item.getProduct(),
+                        receivedQuantity
+                ))
+        );
+        ReflectionTestUtils.setField(receipt, "id", 200L);
+
+        return receipt;
     }
 
     private Product product(Long id, String sku) {

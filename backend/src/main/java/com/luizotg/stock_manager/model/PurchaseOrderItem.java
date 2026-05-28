@@ -102,4 +102,12 @@ public class PurchaseOrderItem {
 
         this.receivedQuantity += quantity;
     }
+
+    public void reverseReceivedQuantity(Integer quantity) {
+        if (quantity > receivedQuantity) {
+            throw new IllegalArgumentException("Quantidade estornada não pode ser maior que a quantidade recebida.");
+        }
+
+        this.receivedQuantity -= quantity;
+    }
 }

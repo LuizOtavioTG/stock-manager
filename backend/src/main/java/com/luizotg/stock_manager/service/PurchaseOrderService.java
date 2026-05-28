@@ -2,11 +2,14 @@ package com.luizotg.stock_manager.service;
 
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderItemCreateDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiptReverseDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveItemDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
 import com.luizotg.stock_manager.dto.stockMovement.StockInboundRequestDTO;
+import com.luizotg.stock_manager.dto.stockMovement.StockOutboundRequestDTO;
 import com.luizotg.stock_manager.exception.BusinessException;
+import com.luizotg.stock_manager.exception.InsufficientStockException;
 import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.PurchaseOrder;
@@ -74,6 +77,28 @@ public class PurchaseOrderService {
     public Page<PurchaseOrderReceipt> findReceiptsByPurchaseOrderId(Long purchaseOrderId, Pageable pageable) {
         findById(purchaseOrderId);
         return purchaseOrderReceiptRepository.findByPurchaseOrderId(purchaseOrderId, pageable);
+    }
+
+    @Transactional
+    public PurchaseOrderReceipt reverseReceipt(Long purchaseOrderId, Long receiptId, PurchaseOrderReceiptReverseDTO dto) {
+        PurchaseOrder purchaseOrder = findById(purchaseOrderId);
+        PurchaseOrderReceipt receipt = purchaseOrderReceiptRepository.findById(receiptId)
+                .orElseThrow(() -> new ResourceNotFoundException("Recebimento com ID " + receiptId + " não encontrado."));
+
+        if (!receipt.getPurchaseOrder().getId().equals(purchaseOrder.getId())) {
+            throw new BusinessException("Recebimento informado não pertence ao pedido.");
+        }
+
+        if (!receipt.isActive()) {
+            throw new BusinessException("Recebimento já estornado não pode ser estornado novamente.");
+        }
+
+        receipt.getItems().forEach(item -> reverseReceiptItem(receipt, item, dto.reason()));
+        receipt.reverse(dto.reason());
+        purchaseOrder.updateStatusAfterReceiptChange();
+        purchaseOrderRepository.save(purchaseOrder);
+
+        return purchaseOrderReceiptRepository.save(receipt);
     }
 
     @Transactional
@@ -192,6 +217,24 @@ public class PurchaseOrderService {
 
         item.receive(itemDto.receivedQuantity());
         return new PurchaseOrderReceiptItem(item, item.getProduct(), itemDto.receivedQuantity());
+    }
+
+    private void reverseReceiptItem(PurchaseOrderReceipt receipt, PurchaseOrderReceiptItem receiptItem, String reason) {
+        try {
+            stockMovementService.registerOutbound(new StockOutboundRequestDTO(
+                    receiptItem.getProduct().getId(),
+                    receipt.getStorageLocation().getId(),
+                    receiptItem.getReceivedQuantity(),
+                    "Estorno de recebimento de pedido de compra",
+                    "PURCHASE-ORDER-RECEIPT-" + receipt.getId(),
+                    "Sistema",
+                    reason
+            ));
+        } catch (InsufficientStockException exception) {
+            throw new InsufficientStockException("Não há estoque suficiente para estornar este recebimento.");
+        }
+
+        receiptItem.getPurchaseOrderItem().reverseReceivedQuantity(receiptItem.getReceivedQuantity());
     }
 
     private PurchaseOrderItem findPurchaseOrderItem(PurchaseOrder purchaseOrder, Long purchaseOrderItemId) {
