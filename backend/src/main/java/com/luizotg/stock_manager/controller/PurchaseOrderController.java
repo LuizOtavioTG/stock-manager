@@ -2,6 +2,7 @@ package com.luizotg.stock_manager.controller;
 
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderCreateDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderDetailDTO;
+import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiptDetailDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderReceiveDTO;
 import com.luizotg.stock_manager.dto.purchaseOrder.PurchaseOrderUpdateDTO;
 import com.luizotg.stock_manager.model.PurchaseOrder;
@@ -101,5 +102,15 @@ public class PurchaseOrderController {
     ) {
         PurchaseOrder purchaseOrder = purchaseOrderService.receive(id, dto);
         return ResponseEntity.ok(new PurchaseOrderDetailDTO(purchaseOrder));
+    }
+
+    @GetMapping("/{id}/receipts")
+    public ResponseEntity<Page<PurchaseOrderReceiptDetailDTO>> listReceipts(
+            @PathVariable Long id,
+            @PageableDefault(size = 20, sort = "receiptDate") Pageable pageable
+    ) {
+        Page<PurchaseOrderReceiptDetailDTO> dtoPage = purchaseOrderService.findReceiptsByPurchaseOrderId(id, pageable)
+                .map(PurchaseOrderReceiptDetailDTO::new);
+        return ResponseEntity.ok(dtoPage);
     }
 }

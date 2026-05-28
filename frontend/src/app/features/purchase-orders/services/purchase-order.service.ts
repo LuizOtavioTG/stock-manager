@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../core/api/api.service';
 import { Page } from '../../../models/page.model';
 import { PurchaseOrder, PurchaseOrderStatus } from '../models/purchase-order.model';
+import { PurchaseOrderReceipt } from '../models/purchase-order-receipt.model';
 import {
   PurchaseOrderCreateRequest,
   PurchaseOrderReceiveRequest,
@@ -52,5 +53,11 @@ export class PurchaseOrderService {
 
   receivePurchaseOrder(id: number, payload: PurchaseOrderReceiveRequest): Observable<PurchaseOrder> {
     return this.api.post<PurchaseOrder, PurchaseOrderReceiveRequest>(`api/purchase-orders/${id}/receive`, payload);
+  }
+
+  listReceipts(purchaseOrderId: number, page: number, size: number, sort = 'receiptDate,desc'): Observable<Page<PurchaseOrderReceipt>> {
+    return this.api.get<Page<PurchaseOrderReceipt>>(`api/purchase-orders/${purchaseOrderId}/receipts`, {
+      params: { page, size, sort }
+    });
   }
 }

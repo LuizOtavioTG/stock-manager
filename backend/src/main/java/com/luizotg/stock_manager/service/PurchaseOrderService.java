@@ -11,10 +11,15 @@ import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.PurchaseOrder;
 import com.luizotg.stock_manager.model.PurchaseOrderItem;
+import com.luizotg.stock_manager.model.PurchaseOrderReceipt;
+import com.luizotg.stock_manager.model.PurchaseOrderReceiptItem;
 import com.luizotg.stock_manager.model.PurchaseOrderStatus;
+import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.ProductRepository;
+import com.luizotg.stock_manager.repository.PurchaseOrderReceiptRepository;
 import com.luizotg.stock_manager.repository.PurchaseOrderRepository;
+import com.luizotg.stock_manager.repository.StorageLocationRepository;
 import com.luizotg.stock_manager.repository.SupplierRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -30,17 +35,23 @@ public class PurchaseOrderService {
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
     private final StockMovementService stockMovementService;
+    private final StorageLocationRepository storageLocationRepository;
+    private final PurchaseOrderReceiptRepository purchaseOrderReceiptRepository;
 
     public PurchaseOrderService(
             PurchaseOrderRepository purchaseOrderRepository,
             SupplierRepository supplierRepository,
             ProductRepository productRepository,
-            StockMovementService stockMovementService
+            StockMovementService stockMovementService,
+            StorageLocationRepository storageLocationRepository,
+            PurchaseOrderReceiptRepository purchaseOrderReceiptRepository
     ) {
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.supplierRepository = supplierRepository;
         this.productRepository = productRepository;
         this.stockMovementService = stockMovementService;
+        this.storageLocationRepository = storageLocationRepository;
+        this.purchaseOrderReceiptRepository = purchaseOrderReceiptRepository;
     }
 
     public Page<PurchaseOrder> findAll(Pageable pageable) {
@@ -58,6 +69,11 @@ public class PurchaseOrderService {
 
     public Page<PurchaseOrder> findByStatus(PurchaseOrderStatus status, Pageable pageable) {
         return purchaseOrderRepository.findByStatus(status, pageable);
+    }
+
+    public Page<PurchaseOrderReceipt> findReceiptsByPurchaseOrderId(Long purchaseOrderId, Pageable pageable) {
+        findById(purchaseOrderId);
+        return purchaseOrderReceiptRepository.findByPurchaseOrderId(purchaseOrderId, pageable);
     }
 
     @Transactional
@@ -103,12 +119,23 @@ public class PurchaseOrderService {
     public PurchaseOrder receive(Long id, PurchaseOrderReceiveDTO dto) {
         PurchaseOrder purchaseOrder = findById(id);
         validateReceivablePurchaseOrder(purchaseOrder);
+        StorageLocation storageLocation = storageLocationRepository.findById(dto.storageLocationId())
+                .orElseThrow(() -> new ResourceNotFoundException("Local de armazenamento com ID " + dto.storageLocationId() + " não encontrado."));
 
         if (dto.items() == null || dto.items().isEmpty()) {
             throw new BusinessException("Recebimento deve ter pelo menos um item.");
         }
 
-        dto.items().forEach(itemDto -> receiveItem(purchaseOrder, dto.storageLocationId(), itemDto, dto.notes()));
+        List<PurchaseOrderReceiptItem> receiptItems = dto.items().stream()
+                .map(itemDto -> receiveItem(purchaseOrder, dto.storageLocationId(), itemDto, dto.notes()))
+                .toList();
+
+        purchaseOrderReceiptRepository.save(new PurchaseOrderReceipt(
+                purchaseOrder,
+                storageLocation,
+                dto.notes(),
+                receiptItems
+        ));
         purchaseOrder.updateStatusAfterReceiving();
 
         return purchaseOrderRepository.save(purchaseOrder);
@@ -141,7 +168,7 @@ public class PurchaseOrderService {
         }
     }
 
-    private void receiveItem(
+    private PurchaseOrderReceiptItem receiveItem(
             PurchaseOrder purchaseOrder,
             Long storageLocationId,
             PurchaseOrderReceiveItemDTO itemDto,
@@ -164,6 +191,7 @@ public class PurchaseOrderService {
         ));
 
         item.receive(itemDto.receivedQuantity());
+        return new PurchaseOrderReceiptItem(item, item.getProduct(), itemDto.receivedQuantity());
     }
 
     private PurchaseOrderItem findPurchaseOrderItem(PurchaseOrder purchaseOrder, Long purchaseOrderItemId) {

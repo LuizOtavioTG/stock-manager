@@ -40,6 +40,7 @@ import { StorageLocationService } from '../../../storage-locations/services/stor
 import { Supplier } from '../../../suppliers/models/supplier.model';
 import { SupplierService } from '../../../suppliers/services/supplier.service';
 import { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '../../models/purchase-order.model';
+import { PurchaseOrderReceipt } from '../../models/purchase-order-receipt.model';
 import {
   PurchaseOrderCreateRequest,
   PurchaseOrderItemRequest,
@@ -109,6 +110,17 @@ const EMPTY_PAGE: Page<PurchaseOrder> = {
   empty: true
 };
 
+const EMPTY_RECEIPTS_PAGE: Page<PurchaseOrderReceipt> = {
+  content: [],
+  totalElements: 0,
+  totalPages: 0,
+  size: 20,
+  number: 0,
+  first: true,
+  last: true,
+  empty: true
+};
+
 @Component({
   selector: 'app-purchase-order-list',
   imports: [
@@ -167,13 +179,17 @@ export class PurchaseOrderListComponent implements OnInit {
   protected readonly isDetailsLoading = signal(false);
   protected readonly isFormDialogVisible = signal(false);
   protected readonly isDetailsDialogVisible = signal(false);
+  protected readonly isReceiptItemsDialogVisible = signal(false);
   protected readonly isReceiveDialogVisible = signal(false);
   protected readonly isReceiveLoading = signal(false);
+  protected readonly isReceiptsLoading = signal(false);
   protected readonly isReceiving = signal(false);
   protected readonly pageSize = signal(10);
   protected readonly sort = signal('orderDate,desc');
   protected readonly purchaseOrdersPage = signal<Page<PurchaseOrder>>(EMPTY_PAGE);
   protected readonly selectedPurchaseOrder = signal<PurchaseOrder | null>(null);
+  protected readonly selectedReceipt = signal<PurchaseOrderReceipt | null>(null);
+  protected readonly receiptsPage = signal<Page<PurchaseOrderReceipt>>(EMPTY_RECEIPTS_PAGE);
   protected readonly purchaseOrderBeingReceived = signal<PurchaseOrder | null>(null);
   protected readonly purchaseOrderBeingEdited = signal<PurchaseOrder | null>(null);
   protected readonly supplierOptions = signal<Supplier[]>([]);
@@ -184,6 +200,7 @@ export class PurchaseOrderListComponent implements OnInit {
   protected readonly isLoadingStorageLocationOptions = signal(false);
 
   protected readonly purchaseOrders = computed(() => this.purchaseOrdersPage().content);
+  protected readonly receipts = computed(() => this.receiptsPage().content);
   protected readonly totalElements = computed(() => this.purchaseOrdersPage().totalElements);
   protected readonly first = computed(() => this.purchaseOrdersPage().number * this.purchaseOrdersPage().size);
   protected readonly formTitle = computed(() => (this.purchaseOrderBeingEdited() ? 'Editar pedido de compra' : 'Novo pedido de compra'));
@@ -369,6 +386,7 @@ export class PurchaseOrderListComponent implements OnInit {
         next: (orderDetail) => {
           this.selectedPurchaseOrder.set(orderDetail);
           this.isDetailsLoading.set(false);
+          this.loadReceipts(orderDetail.id);
         },
         error: () => {
           this.isDetailsDialogVisible.set(false);
@@ -376,6 +394,11 @@ export class PurchaseOrderListComponent implements OnInit {
           this.showDetailsLoadError();
         }
       });
+  }
+
+  protected openReceiptItems(receipt: PurchaseOrderReceipt): void {
+    this.selectedReceipt.set(receipt);
+    this.isReceiptItemsDialogVisible.set(true);
   }
 
   protected confirmCancelOrder(order: PurchaseOrder): void {
@@ -606,6 +629,26 @@ export class PurchaseOrderListComponent implements OnInit {
       });
   }
 
+  private loadReceipts(purchaseOrderId: number): void {
+    this.isReceiptsLoading.set(true);
+    this.receiptsPage.set(EMPTY_RECEIPTS_PAGE);
+
+    this.purchaseOrderService
+      .listReceipts(purchaseOrderId, 0, 20, 'receiptDate,desc')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (receiptsPage) => {
+          this.receiptsPage.set(receiptsPage);
+          this.isReceiptsLoading.set(false);
+        },
+        error: () => {
+          this.receiptsPage.set(EMPTY_RECEIPTS_PAGE);
+          this.isReceiptsLoading.set(false);
+          this.showReceiptsLoadError();
+        }
+      });
+  }
+
   private loadStorageLocationOptions(): void {
     this.isLoadingStorageLocationOptions.set(true);
 
@@ -783,6 +826,15 @@ export class PurchaseOrderListComponent implements OnInit {
       severity: 'error',
       summary: 'Erro ao carregar pedido',
       detail: 'Não foi possível buscar os detalhes do pedido de compra.',
+      life: 5000
+    });
+  }
+
+  private showReceiptsLoadError(): void {
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Erro ao carregar recebimentos',
+      detail: 'Não foi possível buscar o histórico de recebimentos do pedido.',
       life: 5000
     });
   }

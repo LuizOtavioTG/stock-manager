@@ -11,10 +11,14 @@ import com.luizotg.stock_manager.exception.ResourceNotFoundException;
 import com.luizotg.stock_manager.model.Product;
 import com.luizotg.stock_manager.model.PurchaseOrder;
 import com.luizotg.stock_manager.model.PurchaseOrderItem;
+import com.luizotg.stock_manager.model.PurchaseOrderReceipt;
 import com.luizotg.stock_manager.model.PurchaseOrderStatus;
+import com.luizotg.stock_manager.model.StorageLocation;
 import com.luizotg.stock_manager.model.Supplier;
 import com.luizotg.stock_manager.repository.ProductRepository;
+import com.luizotg.stock_manager.repository.PurchaseOrderReceiptRepository;
 import com.luizotg.stock_manager.repository.PurchaseOrderRepository;
+import com.luizotg.stock_manager.repository.StorageLocationRepository;
 import com.luizotg.stock_manager.repository.SupplierRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +48,7 @@ class PurchaseOrderServiceTest {
     private static final Long SUPPLIER_ID = 10L;
     private static final Long PRODUCT_ID = 20L;
     private static final Long SECOND_PRODUCT_ID = 21L;
+    private static final Long STORAGE_LOCATION_ID = 30L;
 
     @Mock
     private PurchaseOrderRepository purchaseOrderRepository;
@@ -57,6 +62,12 @@ class PurchaseOrderServiceTest {
     @Mock
     private StockMovementService stockMovementService;
 
+    @Mock
+    private StorageLocationRepository storageLocationRepository;
+
+    @Mock
+    private PurchaseOrderReceiptRepository purchaseOrderReceiptRepository;
+
     private PurchaseOrderService purchaseOrderService;
 
     @BeforeEach
@@ -65,7 +76,9 @@ class PurchaseOrderServiceTest {
                 purchaseOrderRepository,
                 supplierRepository,
                 productRepository,
-                stockMovementService
+                stockMovementService,
+                storageLocationRepository,
+                purchaseOrderReceiptRepository
         );
     }
 
@@ -223,10 +236,12 @@ class PurchaseOrderServiceTest {
         PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT, 10);
         PurchaseOrderItem item = order.getItems().get(0);
         when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation()));
+        when(purchaseOrderReceiptRepository.save(any(PurchaseOrderReceipt.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PurchaseOrder received = purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
-                30L,
+                STORAGE_LOCATION_ID,
                 List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 4)),
                 "NF 123"
         ));
@@ -236,12 +251,20 @@ class PurchaseOrderServiceTest {
         assertThat(received.getStatus()).isEqualTo(PurchaseOrderStatus.PARTIALLY_RECEIVED);
         verify(stockMovementService).registerInbound(argThat((StockInboundRequestDTO dto) ->
                 dto.productId().equals(PRODUCT_ID)
-                        && dto.storageLocationId().equals(30L)
+                        && dto.storageLocationId().equals(STORAGE_LOCATION_ID)
                         && dto.quantity().equals(4)
                         && dto.reason().equals("Recebimento de pedido de compra")
                         && dto.reference().equals("PURCHASE-ORDER-" + PURCHASE_ORDER_ID)
                         && dto.responsible().equals("Sistema")
                         && dto.notes().equals("NF 123")
+        ));
+        verify(purchaseOrderReceiptRepository).save(argThat((PurchaseOrderReceipt receipt) ->
+                receipt.getPurchaseOrder() == order
+                        && receipt.getStorageLocation().getId().equals(STORAGE_LOCATION_ID)
+                        && receipt.getNotes().equals("NF 123")
+                        && receipt.getItems().size() == 1
+                        && receipt.getItems().get(0).getPurchaseOrderItem() == item
+                        && receipt.getItems().get(0).getReceivedQuantity().equals(4)
         ));
         verify(purchaseOrderRepository).save(order);
     }
@@ -251,10 +274,12 @@ class PurchaseOrderServiceTest {
         PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT, 10);
         PurchaseOrderItem item = order.getItems().get(0);
         when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation()));
+        when(purchaseOrderReceiptRepository.save(any(PurchaseOrderReceipt.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(purchaseOrderRepository.save(any(PurchaseOrder.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PurchaseOrder received = purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
-                30L,
+                STORAGE_LOCATION_ID,
                 List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 10)),
                 null
         ));
@@ -303,15 +328,17 @@ class PurchaseOrderServiceTest {
     void receiveItemThatDoesNotBelongToPurchaseOrderThrows() {
         PurchaseOrder order = purchaseOrder(PurchaseOrderStatus.SENT, 10);
         when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation()));
 
         assertThatThrownBy(() -> purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
-                30L,
+                STORAGE_LOCATION_ID,
                 List.of(new PurchaseOrderReceiveItemDTO(999L, 1)),
                 null
         ))).isInstanceOf(BusinessException.class)
                 .hasMessage("Item informado não pertence ao pedido.");
 
         verify(stockMovementService, never()).registerInbound(any(StockInboundRequestDTO.class));
+        verify(purchaseOrderReceiptRepository, never()).save(any(PurchaseOrderReceipt.class));
         verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
     }
 
@@ -321,9 +348,10 @@ class PurchaseOrderServiceTest {
         PurchaseOrderItem item = order.getItems().get(0);
         item.receive(8);
         when(purchaseOrderRepository.findById(PURCHASE_ORDER_ID)).thenReturn(Optional.of(order));
+        when(storageLocationRepository.findById(STORAGE_LOCATION_ID)).thenReturn(Optional.of(storageLocation()));
 
         assertThatThrownBy(() -> purchaseOrderService.receive(PURCHASE_ORDER_ID, new PurchaseOrderReceiveDTO(
-                30L,
+                STORAGE_LOCATION_ID,
                 List.of(new PurchaseOrderReceiveItemDTO(item.getId(), 3)),
                 null
         ))).isInstanceOf(BusinessException.class)
@@ -332,6 +360,7 @@ class PurchaseOrderServiceTest {
         assertThat(item.getReceivedQuantity()).isEqualTo(8);
         assertThat(item.getPendingQuantity()).isEqualTo(2);
         verify(stockMovementService, never()).registerInbound(any(StockInboundRequestDTO.class));
+        verify(purchaseOrderReceiptRepository, never()).save(any(PurchaseOrderReceipt.class));
         verify(purchaseOrderRepository, never()).save(any(PurchaseOrder.class));
     }
 
@@ -374,6 +403,29 @@ class PurchaseOrderServiceTest {
                 null,
                 null,
                 true,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private StorageLocation storageLocation() {
+        return new StorageLocation(
+                STORAGE_LOCATION_ID,
+                "Depósito",
+                "WAREHOUSE",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                true,
+                null,
+                null,
                 null,
                 null,
                 null,
