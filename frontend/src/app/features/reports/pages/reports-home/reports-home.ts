@@ -131,6 +131,14 @@ export class ReportsHomeComponent implements OnInit {
       route: '/relatorios/movimentacoes'
     },
     {
+      title: 'Compras e recebimentos',
+      description: 'Acompanhe pedidos de compra, recebimentos, pendências e valores por fornecedor.',
+      icon: 'pi pi-receipt',
+      tag: 'Compras',
+      tagSeverity: 'info',
+      route: '/relatorios/compras-recebimentos'
+    },
+    {
       title: 'Produtos cadastrados',
       description: 'Consulta dos produtos ativos e inativos do catálogo.',
       icon: 'pi pi-box',

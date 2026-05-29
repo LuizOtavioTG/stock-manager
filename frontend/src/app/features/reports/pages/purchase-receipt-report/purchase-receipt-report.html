@@ -1,0 +1,211 @@
+<section class="report-page">
+  <header class="page-heading">
+    <span>Relatórios</span>
+    <div>
+      <h1>Compras e recebimentos</h1>
+      <div class="heading-actions">
+        <button pButton type="button" icon="pi pi-download" [label]="'Exportar CSV'" severity="secondary" outlined (click)="exportCsv()"></button>
+        <button pButton type="button" icon="pi pi-refresh" label="Atualizar" text (click)="loadOrders(ordersPage().number, pageSize())"></button>
+      </div>
+    </div>
+  </header>
+
+  <section class="summary-grid" aria-label="Resumo de compras e recebimentos">
+    @for (card of summaryCards(); track card.title) {
+      <div class="summary-card">
+        <i [class]="card.icon" aria-hidden="true"></i>
+        <div>
+          <span>{{ card.title }}</span>
+          <strong>{{ card.value }}</strong>
+        </div>
+      </div>
+    }
+  </section>
+
+  <app-paginated-list
+    section="Relatórios"
+    pageTitle="Compras e recebimentos"
+    cardTitle="Pedidos de compra"
+    [value]="orders()"
+    [loading]="isLoading()"
+    [rows]="pageSize()"
+    [first]="first()"
+    [totalRecords]="totalElements()"
+    [tableStyle]="{ 'min-width': '96rem' }"
+    [columns]="columns"
+    (refresh)="loadOrders(ordersPage().number, pageSize())"
+    (lazyLoad)="onPageChange($event)"
+  >
+    <ng-template appPaginatedListToolbar>
+      <section class="filters-card" aria-label="Filtros do relatório">
+        <div class="filter-field">
+          <span>Fornecedor</span>
+          <p-select
+            [formControl]="filterForm.controls.supplierId"
+            [options]="supplierOptions()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Todos"
+            showClear
+            appendTo="body"
+            [loading]="isLoadingSupplierOptions()"
+            (onChange)="onSupplierFilterChange($event.value)"
+          />
+        </div>
+
+        <div class="filter-field">
+          <span>Status do pedido</span>
+          <p-select
+            [formControl]="filterForm.controls.status"
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos"
+            showClear
+            appendTo="body"
+            (onChange)="onStatusFilterChange($event.value)"
+          />
+        </div>
+
+        <div class="filter-actions">
+          <button pButton type="button" icon="pi pi-filter" label="Aplicar filtros" (click)="applyFilters()"></button>
+          <button pButton type="button" severity="secondary" outlined icon="pi pi-filter-slash" label="Limpar filtros" (click)="clearFilters()"></button>
+        </div>
+      </section>
+    </ng-template>
+
+    <ng-template appPaginatedListBody let-order>
+      <tr>
+        <td>#{{ order.id }}</td>
+        <td>
+          <div class="item-cell">
+            <strong>{{ order.supplierName || 'Fornecedor não informado' }}</strong>
+            <span>ID {{ order.supplierId }}</span>
+          </div>
+        </td>
+        <td><p-tag [severity]="statusSeverity(order.status)" [value]="statusLabel(order.status)" /></td>
+        <td>{{ order.orderDate ? (order.orderDate | date: 'dd/MM/yyyy') : '-' }}</td>
+        <td>{{ order.expectedDeliveryDate ? (order.expectedDeliveryDate | date: 'dd/MM/yyyy') : '-' }}</td>
+        <td class="numeric-column">{{ order.totalEstimatedCost | currency: 'BRL':'symbol':'1.2-2' }}</td>
+        <td class="numeric-column">{{ order.items.length }}</td>
+        <td class="numeric-column">{{ orderedQuantity(order) }}</td>
+        <td class="numeric-column">{{ receivedQuantity(order) }}</td>
+        <td class="numeric-column">{{ pendingQuantity(order) }}</td>
+        <td class="numeric-column">
+          <strong>{{ receivedPercent(order) | number: '1.0-2' }}%</strong>
+        </td>
+        <td>
+          <div class="row-actions">
+            <button pButton type="button" text rounded icon="pi pi-history" label="Ver recebimentos" (click)="openReceiptsDialog(order)"></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template appPaginatedListEmpty>
+      <tr>
+        <td colspan="12">
+          <div class="empty-state">
+            <i class="pi pi-receipt" aria-hidden="true"></i>
+            <strong>Nenhum pedido encontrado</strong>
+            <span>Ajuste os filtros ou cadastre pedidos de compra.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </app-paginated-list>
+</section>
+
+<p-dialog
+  header="Histórico de recebimentos"
+  modal
+  [visible]="isReceiptsDialogVisible()"
+  [style]="{ width: 'min(72rem, calc(100vw - 2rem))' }"
+  (visibleChange)="isReceiptsDialogVisible.set($event)"
+>
+  @if (selectedOrder(); as order) {
+    <dl class="order-details">
+      <div>
+        <dt>Pedido</dt>
+        <dd>#{{ order.id }}</dd>
+      </div>
+      <div>
+        <dt>Fornecedor</dt>
+        <dd>{{ order.supplierName || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd><p-tag [severity]="statusSeverity(order.status)" [value]="statusLabel(order.status)" /></dd>
+      </div>
+      <div>
+        <dt>Total estimado</dt>
+        <dd>{{ order.totalEstimatedCost | currency: 'BRL':'symbol':'1.2-2' }}</dd>
+      </div>
+    </dl>
+
+    <section class="receipts-section">
+      <h2>Histórico de recebimentos</h2>
+
+      @if (isLoadingReceipts()) {
+        <div class="details-loading">
+          <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+          <span>Carregando recebimentos...</span>
+        </div>
+      } @else if (!receipts().length) {
+        <div class="empty-state empty-state--compact">
+          <i class="pi pi-inbox" aria-hidden="true"></i>
+          <strong>Nenhum recebimento registrado</strong>
+          <span>Este pedido ainda não possui histórico de recebimentos.</span>
+        </div>
+      } @else {
+        <div class="receipt-list">
+          @for (receipt of receipts(); track receipt.id) {
+            <article class="receipt-card">
+              <header>
+                <div>
+                  <strong>{{ receipt.receiptDate ? (receipt.receiptDate | date: 'dd/MM/yyyy HH:mm') : '-' }}</strong>
+                  <span>{{ receipt.storageLocationName || 'Local não informado' }}</span>
+                </div>
+                <p-tag [severity]="receiptStatusSeverity(receipt.status)" [value]="receiptStatusLabel(receipt.status)" />
+              </header>
+
+              <dl class="receipt-meta">
+                <div>
+                  <dt>Itens recebidos</dt>
+                  <dd>{{ receipt.items.length }}</dd>
+                </div>
+                <div>
+                  <dt>Observações</dt>
+                  <dd>{{ receipt.notes || '-' }}</dd>
+                </div>
+                @if (receipt.status === 'REVERSED') {
+                  <div>
+                    <dt>Motivo do estorno</dt>
+                    <dd>{{ receipt.reversalReason || '-' }}</dd>
+                  </div>
+                }
+              </dl>
+
+              <p-table [value]="receipt.items" [tableStyle]="{ 'min-width': '34rem' }" responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Produto</th>
+                    <th>SKU</th>
+                    <th class="numeric-column">Quantidade recebida</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-item>
+                  <tr>
+                    <td>{{ item.productName || '-' }}</td>
+                    <td>{{ item.productSku || '-' }}</td>
+                    <td class="numeric-column">{{ item.receivedQuantity }}</td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</p-dialog>

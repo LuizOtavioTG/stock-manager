@@ -96,5 +96,13 @@ export const routes: Routes = [
         (m) => m.StockMovementReportComponent
       ),
     data: { title: 'Relatório de movimentações', section: 'Relatórios' }
+  },
+  {
+    path: 'relatorios/compras-recebimentos',
+    loadComponent: () =>
+      import('./features/reports/pages/purchase-receipt-report/purchase-receipt-report').then(
+        (m) => m.PurchaseReceiptReportComponent
+      ),
+    data: { title: 'Compras e recebimentos', section: 'Relatórios' }
   }
 ];
